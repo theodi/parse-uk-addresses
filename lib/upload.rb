@@ -4,6 +4,61 @@ require 'breasal'
 
 module Upload
 
+	class Roads
+		# Table structure:
+
+		# Column		Field name		Format		Example			Description
+
+		# 1		Name			A*		ALRESFORD ROAD		Feature name
+		# 2		Classification		A*		B3404			Road number classification
+		# 3		Centx			I6		449590			X co-ord for centre point of road object
+		# 4		Centy			I7		129430			Y co-ord for centre point of road object
+		# 5		Minx			I6		448797			X co-ord for SW corner of the road object box
+		# 6		Maxx			I6		450392			X co-ord for NE corner of road object box
+		# 7		Miny			I7		129422			Y co-ord for SW corner of the road object box
+		# 8		Maxy			I7		129510			Y co-ord for NE corner of road object box
+		# 9		Settlement		A*		WINCHESTER		Town in which the centre of the object falls
+		# 10		Locality		A*		St. John and All Saints	1990 boundaries description for the point at the centre of the object
+		# 11		Cou_Unit		A*		Hampshire County	County in which the centre of the object falls
+		# 12		Local Authority		A*		Winchester District	Local Authority in which the centre of the object falls
+		# 13		Tile_10k		A6		SU42NE			1:10 000 tile reference for the centre point of the object
+		# 14		Tile_25k		A4		SU42			1:25 000 tile reference for the centre point of the object
+		# 15		Source			A*		Roads			Source of information
+
+		def self.load
+			roads_db = CouchRest.database!("http://127.0.0.1:5984/roads")
+			roads_headers = 'Name,Classification,Centx,Centy,Minx,Maxx,Miny,Maxy,Settlement,Locality,Cou_Unit,Local_Authority,Tile_10k,Tile_25k,Source'.split(',')
+
+			csv = File.expand_path('../../data/gazlco_gb/Data/OS_Locator2013_2_OPEN.txt', __FILE__)
+			docs = []
+
+			CSV.foreach(csv, headers: roads_headers, col_sep: ':') do |row|
+				doc = row.to_hash
+				doc['Centx'] = row['Centx'].to_i
+				doc['Centy'] = row['Centy'].to_i
+			  doc['Centre'] = Breasal::EastingNorthing.new(easting: doc['Centx'], northing: doc['Centy'], type: :gb).to_wgs84
+				doc['Minx'] = row['Minx'].to_i
+				doc['Miny'] = row['Miny'].to_i
+			  doc['Min'] = Breasal::EastingNorthing.new(easting: doc['Minx'], northing: doc['Miny'], type: :gb).to_wgs84
+				doc['Maxx'] = row['Maxx'].to_i
+				doc['Maxy'] = row['Maxy'].to_i
+			  doc['Max'] = Breasal::EastingNorthing.new(easting: doc['Maxx'], northing: doc['Maxy'], type: :gb).to_wgs84
+				docs.push(doc)
+				if docs.length >= 10000
+					puts "Loading #{docs.length} roads ..."
+					result = roads_db.bulk_save(docs)
+					puts "... done: #{result[0].inspect}"
+					docs = []
+				end
+			end
+
+			puts "Loading #{docs.length} roads ..."
+			result = roads_db.bulk_save(docs)
+			puts "... done: #{result[0].inspect}"
+		end
+
+	end
+
 	class CodePoint
 
 		def self.load
