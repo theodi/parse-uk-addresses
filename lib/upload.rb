@@ -40,12 +40,11 @@ end
 codepoint_db = CouchRest.database!("http://127.0.0.1:5984/codepoint")
 codepoint_headers = 'Postcode,Positional_quality_indicator,Eastings,Northings,Country_code,NHS_regional_HA_code,NHS_HA_code,Admin_county_code,Admin_district_code,Admin_ward_code'.split(',')
 
-docs = []
-
 csv_dir = File.expand_path('../../data/codepo_gb/Data/CSV/', __FILE__)
 
 Dir.glob("#{csv_dir}/*.csv") do |csv|
 	puts "Processing #{csv} ..."
+	docs = []
 	CSV.foreach(csv, headers: codepoint_headers) do |row|
 		doc = row.to_hash
 		doc['_id'] = row['Postcode']
