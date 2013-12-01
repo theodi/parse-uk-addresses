@@ -1,0 +1,23 @@
+PATH
+  remote: /users/User/Documents/projects/breasal
+  specs:
+    breasal (0.0.1)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    couchrest (1.2.0)
+      mime-types (~> 1.15)
+      multi_json (~> 1.0)
+      rest-client (~> 1.6.1)
+    mime-types (1.25.1)
+    multi_json (1.8.2)
+    rest-client (1.6.7)
+      mime-types (>= 1.16)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  breasal!
+  couchrest
