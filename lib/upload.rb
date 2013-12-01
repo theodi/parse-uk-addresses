@@ -47,7 +47,11 @@ Dir.glob("#{csv_dir}/*.csv") do |csv|
 	docs = []
 	CSV.foreach(csv, headers: codepoint_headers) do |row|
 		doc = row.to_hash
-		doc['_id'] = row['Postcode']
+		# clean up the postcode
+		postcode = row['Postcode']
+		postcode.insert(4, ' ') unless postcode.include?(' ')
+		postcode.gsub(/\s+/, ' ')
+		doc['_id'] = postcode
 		doc['Eastings'] = row['Eastings'].to_i
 		doc['Northings'] = row['Northings'].to_i
 	  doc['Location'] = Breasal::EastingNorthing.new(easting: doc['Eastings'], northing: doc['Northings'], type: :gb).to_wgs84
