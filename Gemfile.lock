@@ -12,6 +12,7 @@ GEM
       rest-client (~> 1.6.1)
     mime-types (1.25.1)
     multi_json (1.8.2)
+    rake (0.9.6)
     rest-client (1.6.7)
       mime-types (>= 1.16)
 
@@ -21,3 +22,4 @@ PLATFORMS
 DEPENDENCIES
   breasal!
   couchrest
+  rake
