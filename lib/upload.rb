@@ -63,8 +63,12 @@ Dir.glob("#{csv_dir}/*.csv") do |csv|
 	  doc['NHS_HA']   = { code: row['NHS_HA_code'],         name: ons[row['NHS_HA_code']] } unless row['NHS_HA_code'] == ''
 		docs.push(doc)
 	end
-	puts "... loading #{docs.length} postcodes ..."
-	result = codepoint_db.bulk_save(docs)
-	puts "... done: #{result[0].inspect}"
+	if codepoint_db.all_docs({key: docs[0]['_id']})['rows'].empty?
+		puts "... loading #{docs.length} postcodes ..."
+		result = codepoint_db.bulk_save(docs)
+		puts "... done: #{result[0].inspect}"
+	else
+		puts "... already loaded"
+	end
 end
 
