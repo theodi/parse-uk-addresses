@@ -4,6 +4,74 @@ require 'breasal'
 
 module Upload
 
+	class Features
+		# Field number  Field name  Full name           Format      Example
+		# 1             SEQ         Sequence number	    Int (6)     86415
+		# 2             KM_REF      Kilometre reference Char (6)    ST5265
+		# 3             DEF_NAM     Definitive name     Char (60)   Felton
+		# 4             TILE_REF    Tile reference      Char (4)    ST46
+		# 5             LAT_DEG     Latitude degrees    Int (2)     51
+		# 6             LAT_MIN     Latitude minutes    Float (3.1) 23.1
+		# 7             LONG_DEG    Longitude degrees   Int (2)     2
+		# 8             LONG_MIN    Longitude minutes   Float (3.1) 41
+		# 9             NORTH       Northings           Int (7)     165500
+		# 10            EAST        Eastings            Int (7)     352500
+		# 11            GMT         Greenwich Meridian  Char (1)    W
+		# 12            CO_CODE     County code         Char (2)    NS
+		# 13            COUNTY      County name         Char (20)   N Som
+		# 14            FULL_COUNTY Full county name    Char (60)   North Somerset
+		# 15            F_CODE      Feature code        Char (3)    O
+		# 16            E_DATE      Edit date           Char (11)   01-MAR-1993
+		# 17            UPDATE_CO   Update code         Char (1)    l
+		# 18            SHEET_1     Primary sheet no    Int (3)     172
+		# 19            SHEET_2     Second sheet no     Int (3)     182
+		# 20            SHEET_3     Third sheet no      Int (3)     0
+
+		def self.load
+			features_db = CouchRest.database!("http://127.0.0.1:5984/features")
+			features_headers = 'SEQ,KM_REF,DEF_NAM,TILE_REF,LAT_DEG,LAT_MIN,LONG_DEG,LONG_MIN,NORTH,EAST,GMT,CO_CODE,COUNTY,FULL_COUNTY,F_CODE,E_DATE,UPDATE_CO,SHEET_1,SHEET_2,SHEET_3'.split(',')
+			feature_types = {
+				'A' => 'Antiquity (non-Roman)',
+				'F' => 'Forest or wood',
+				'FM' => 'Farm',
+				'H' => 'Hill or mountain',
+				'R' => 'Antiquity (Roman)',
+				'C' => 'City',
+				'T' => 'Town',
+				'O' => 'Other',
+				'W' => 'Water feature',
+				'X' => 'All other features'
+			}
+
+			csv = File.expand_path('../../data/gaz50k_gb/data/50kgaz2013.txt', __FILE__)
+			docs = []
+
+			CSV.foreach(csv, encoding:'iso-8859-1:utf-8', headers: features_headers, col_sep: ':') do |row|
+				doc = row.to_hash
+				doc['_id'] = row['SEQ']
+				doc['LAT_DEG'] = row['LAT_DEG'].to_i
+				doc['LAT_MIN'] = row['LAT_MIN'].to_f
+				doc['LONG_DEG'] = row['LONG_DEG'].to_i
+				doc['LONG_MIN'] = row['LONG_MIN'].to_f
+				doc['NORTH'] = row['NORTH'].to_i
+				doc['EAST'] = row['EAST'].to_i
+			  doc['Location'] = Breasal::EastingNorthing.new(easting: doc['EAST'], northing: doc['NORTH'], type: :gb).to_wgs84
+				doc['Type'] = feature_types[row['F_CODE']]
+				docs.push(doc)
+				if docs.length >= 10000
+					puts "Loading #{docs.length} features ..."
+					result = features_db.bulk_save(docs)
+					puts "... done: #{result[0].inspect}"
+					docs = []
+				end
+			end
+
+			puts "Loading #{docs.length} features ..."
+			result = features_db.bulk_save(docs)
+			puts "... done: #{result[0].inspect}"
+		end
+	end
+
 	class Roads
 		# Table structure:
 
