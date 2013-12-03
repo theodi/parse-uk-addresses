@@ -1,11 +1,46 @@
 require 'csv'
+require 'yaml'
 require 'couchrest'
 require 'breasal'
-require 'yaml'
 
 CONFIG = YAML.load_file(File.expand_path('../../config/config.yml', __FILE__))
 
 module Upload
+
+	class ONS
+
+		def self.load
+			ons_db = CouchRest.database!(CONFIG['ons_db'])
+			area_types = {
+				"CTY" => / County$/,
+				"DIS" => / District( \(B\))?$/,
+				"DIW" => / Ward$/,
+				"LBO" => / London Boro$/,
+				"LBW" => / Ward$/,
+				"MTD" => / District \(B\)$/,
+				"MTW" => / Ward$/,
+				"UTA" => / \(B\)$/,
+				"UTE" => / ED$/,
+				"UTW" => / Ward$/
+			}
+			area_types.each do |type,pattern|
+				docs = []
+				csv = File.expand_path("../../data/codepo_gb/Doc/#{type}.csv", __FILE__)
+				CSV.foreach(csv, headers: 'name,code') do |row|
+					doc = {
+						"_id" => row['code'], 
+						:type => type,
+						:name => row['name'].sub(pattern, '')
+					}
+					docs.push(doc)
+				end
+				puts "Loading #{docs.length} #{type} areas ..."
+				result = ons_db.bulk_save(docs)
+				puts "... done: #{result[0].inspect}"
+			end
+		end
+
+	end
 
 	class Features
 		# Field number  Field name  Full name           Format      Example
@@ -133,41 +168,6 @@ module Upload
 	class CodePoint
 
 		def self.load
-			ons = {}
-			# main admin areas
-			ons_csv = File.expand_path('../../data/ons/CTRY12_GOR10_CTY12_LAD12_WD12_UK_LU.csv', __FILE__)
-			CSV.foreach(ons_csv, encoding:'iso-8859-1:utf-8', headers: :first_row) do |row|
-				ons[row['CTRY12CD']] = row['CTRY12NM']
-				ons[row['CTY12CD']] = row['CTY12NM']
-				ons[row['LAD12CD']] = row['LAD12NM']
-				ons[row['WD12CD']] = row['WD12NM']
-			end
-			# PSHAs
-			ons_csv = File.expand_path('../../data/ons/PSHA_2012_EN_NC.csv', __FILE__)
-			CSV.foreach(ons_csv, encoding:'iso-8859-1:utf-8', headers: :first_row) do |row|
-				ons[row['PSHA12CD']] = row['PSHA12NM']
-			end
-			# SHAs
-			ons_csv = File.expand_path('../../data/ons/SHA_2012_EN_NC.csv', __FILE__)
-			CSV.foreach(ons_csv, encoding:'iso-8859-1:utf-8', headers: :first_row) do |row|
-				ons[row['SHA12CD']] = row['SHA12NM']
-			end
-			# HBs
-			ons_csv = File.expand_path('../../data/ons/HB_2012_SC_NC.csv', __FILE__)
-			CSV.foreach(ons_csv, encoding:'iso-8859-1:utf-8', headers: :first_row) do |row|
-				ons[row['HB12CD']] = row['HB12NM']
-			end
-			# LHBs
-			ons_csv = File.expand_path('../../data/ons/LHB_2012_WA_NC.csv', __FILE__)
-			CSV.foreach(ons_csv, encoding:'iso-8859-1:utf-8', headers: :first_row) do |row|
-				ons[row['LHB12CD']] = row['LHB12NM']
-			end
-			# LHBs
-			ons_csv = File.expand_path('../../data/ons/LHB_2012_WA_NC.csv', __FILE__)
-			CSV.foreach(ons_csv, encoding:'iso-8859-1:utf-8', headers: :first_row) do |row|
-				ons[row['LHB12CD']] = row['LHB12NM']
-			end
-
 			codepoint_db = CouchRest.database!(CONFIG['codepoint_db'])
 			codepoint_headers = 'Postcode,Positional_quality_indicator,Eastings,Northings,Country_code,NHS_regional_HA_code,NHS_HA_code,Admin_county_code,Admin_district_code,Admin_ward_code'.split(',')
 
