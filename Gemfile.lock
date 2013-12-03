@@ -1,5 +1,6 @@
-PATH
-  remote: /users/User/Documents/projects/breasal
+GIT
+  remote: git://github.com/theodi/breasal.git
+  revision: 96faedf5eea2a177e19572507949c7b5c558a192
   specs:
     breasal (0.0.1)
 
