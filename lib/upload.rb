@@ -21,18 +21,24 @@ module Upload
 				"MTW" => / Ward$/,
 				"UTA" => / \(B\)$/,
 				"UTE" => / ED$/,
-				"UTW" => / Ward$/
+				"UTW" => / Ward$/,
+				"NHS_English_SHA" => nil,
+				"NHS_English_PanSHA" => nil,
+				"NHS_Scottish_Health_Boards" => nil,
+				"NHS_NI_Health_Board" => nil
 			}
 			area_types.each do |type,pattern|
 				docs = []
 				csv = File.expand_path("../../data/codepo_gb/Doc/#{type}.csv", __FILE__)
 				CSV.foreach(csv, headers: 'name,code') do |row|
-					doc = {
-						"_id" => row['code'], 
-						:type => type,
-						:name => row['name'].sub(pattern, '')
-					}
-					docs.push(doc)
+					if row['code']
+						doc = {
+							"_id" => pattern ? row['code'] : row['name'], 
+							:type => type.sub(/_/,' '),
+							:name => pattern ? row['name'].sub(pattern, '') : row['code']
+						}
+						docs.push(doc)
+					end
 				end
 				puts "Loading #{docs.length} #{type} areas ..."
 				result = ons_db.bulk_save(docs)
