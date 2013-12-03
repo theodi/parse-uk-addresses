@@ -3,4 +3,4 @@ source 'https://rubygems.org'
 
 gem 'rake'
 gem 'couchrest'
-gem 'breasal', :path => '/users/User/Documents/projects/breasal' # :github => 'theodi/breasal'
+gem 'breasal', :github => 'theodi/breasal'
