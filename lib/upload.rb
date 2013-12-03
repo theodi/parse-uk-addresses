@@ -7,6 +7,28 @@ CONFIG = YAML.load_file(File.expand_path('../../config/config.yml', __FILE__))
 
 module Upload
 
+	class Designs
+
+		def self.load
+
+			ons_db = CouchRest.database!(CONFIG['ons_db'])
+			features_db = CouchRest.database!(CONFIG['features_db'])
+			roads_db = CouchRest.database!(CONFIG['roads_db'])
+			codepoint_db = CouchRest.database!(CONFIG['codepoint_db'])
+
+			ons_db.save_doc({
+				"_id" => "_design/area",
+				:views => {
+					:types => {
+						:map => "function(doc){emit(doc.type,doc.name)}"
+					}
+				}
+			})
+
+		end
+
+	end
+
 	class ONS
 
 		def self.load
