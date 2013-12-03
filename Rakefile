@@ -1,6 +1,10 @@
 require 'bundler/setup'
 require File.expand_path('../lib/upload', __FILE__)
 
+task :upload_designs do
+	Upload::Designs.load
+end
+
 task :upload_ons do
 	Upload::ONS.load
 end

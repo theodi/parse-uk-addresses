@@ -16,11 +16,21 @@ module Upload
 			roads_db = CouchRest.database!(CONFIG['roads_db'])
 			codepoint_db = CouchRest.database!(CONFIG['codepoint_db'])
 
-			ons_db.save_doc({
-				"_id" => "_design/area",
+			# ons_db.save_doc({
+			# 	"_id" => "_design/area",
+			# 	:views => {
+			# 		:types => {
+			# 			:map => "function(doc){emit(doc.type,doc.name)}"
+			# 		}
+			# 	}
+			# })
+
+			features_db.save_doc({
+				"_id" => "_design/unique",
 				:views => {
-					:types => {
-						:map => "function(doc){emit(doc.type,doc.name)}"
+					:counties => {
+						:map => "function(doc){emit(doc.FULL_COUNTY,1)}",
+						:reduce => "_sum"
 					}
 				}
 			})
