@@ -1,6 +1,9 @@
 require 'csv'
 require 'couchrest'
 require 'breasal'
+require 'yaml'
+
+CONFIG = YAML.load_file(File.expand_path('../../config/config.yml', __FILE__))
 
 module Upload
 
@@ -28,7 +31,7 @@ module Upload
 		# 20            SHEET_3     Third sheet no      Int (3)     0
 
 		def self.load
-			features_db = CouchRest.database!("http://127.0.0.1:5984/features")
+			features_db = CouchRest.database!(CONFIG['features_db'])
 			features_headers = 'SEQ,KM_REF,DEF_NAM,TILE_REF,LAT_DEG,LAT_MIN,LONG_DEG,LONG_MIN,NORTH,EAST,GMT,CO_CODE,COUNTY,FULL_COUNTY,F_CODE,E_DATE,UPDATE_CO,SHEET_1,SHEET_2,SHEET_3'.split(',')
 			feature_types = {
 				'A' => 'Antiquity (non-Roman)',
@@ -94,7 +97,7 @@ module Upload
 		# 15		Source			A*		Roads			Source of information
 
 		def self.load
-			roads_db = CouchRest.database!("http://127.0.0.1:5984/roads")
+			roads_db = CouchRest.database!(CONFIG['roads_db'])
 			roads_headers = 'Name,Classification,Centx,Centy,Minx,Maxx,Miny,Maxy,Settlement,Locality,Cou_Unit,Local_Authority,Tile_10k,Tile_25k,Source'.split(',')
 
 			csv = File.expand_path('../../data/gazlco_gb/Data/OS_Locator2013_2_OPEN.txt', __FILE__)
@@ -165,7 +168,7 @@ module Upload
 				ons[row['LHB12CD']] = row['LHB12NM']
 			end
 
-			codepoint_db = CouchRest.database!("http://127.0.0.1:5984/codepoint")
+			codepoint_db = CouchRest.database!(CONFIG['codepoint_db'])
 			codepoint_headers = 'Postcode,Positional_quality_indicator,Eastings,Northings,Country_code,NHS_regional_HA_code,NHS_HA_code,Admin_county_code,Admin_district_code,Admin_ward_code'.split(',')
 
 			csv_dir = File.expand_path('../../data/codepo_gb/Data/CSV/', __FILE__)
