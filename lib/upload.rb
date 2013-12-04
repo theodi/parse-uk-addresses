@@ -1,9 +1,10 @@
 require 'csv'
 require 'yaml'
+require 'dotenv'
 require 'couchrest'
 require 'breasal'
 
-CONFIG = YAML.load_file(File.expand_path('../../config/config.yml', __FILE__))
+Dotenv.load
 
 module Upload
 
@@ -11,19 +12,19 @@ module Upload
 
 		def self.load
 
-			ons_db = CouchRest.database!(CONFIG['ons_db'])
-			features_db = CouchRest.database!(CONFIG['features_db'])
-			roads_db = CouchRest.database!(CONFIG['roads_db'])
-			codepoint_db = CouchRest.database!(CONFIG['codepoint_db'])
+			ons_db = CouchRest.database!(ENV['ONS_DB'])
+			features_db = CouchRest.database!(ENV['FEATURES_DB'])
+			roads_db = CouchRest.database!(ENV['ROADS_DB'])
+			codepoint_db = CouchRest.database!(ENV['CODEPOINT_DB'])
 
-			# ons_db.save_doc({
-			# 	"_id" => "_design/area",
-			# 	:views => {
-			# 		:types => {
-			# 			:map => "function(doc){emit(doc.type,doc.name)}"
-			# 		}
-			# 	}
-			# })
+			ons_db.save_doc({
+				"_id" => "_design/area",
+				:views => {
+					:types => {
+						:map => "function(doc){emit(doc.type,doc.name)}"
+					}
+				}
+			})
 
 			features_db.save_doc({
 				"_id" => "_design/unique",
@@ -42,7 +43,7 @@ module Upload
 	class ONS
 
 		def self.load
-			ons_db = CouchRest.database!(CONFIG['ons_db'])
+			ons_db = CouchRest.database!(ENV['ONS_DB'])
 			area_types = {
 				"CTY" => / County$/,
 				"DIS" => / District( \(B\))?$/,
@@ -104,7 +105,7 @@ module Upload
 		# 20            SHEET_3     Third sheet no      Int (3)     0
 
 		def self.load
-			features_db = CouchRest.database!(CONFIG['features_db'])
+			features_db = CouchRest.database!(ENV['FEATURES_DB'])
 			features_headers = 'SEQ,KM_REF,DEF_NAM,TILE_REF,LAT_DEG,LAT_MIN,LONG_DEG,LONG_MIN,NORTH,EAST,GMT,CO_CODE,COUNTY,FULL_COUNTY,F_CODE,E_DATE,UPDATE_CO,SHEET_1,SHEET_2,SHEET_3'.split(',')
 			feature_types = {
 				'A' => 'Antiquity (non-Roman)',
@@ -170,7 +171,7 @@ module Upload
 		# 15		Source			A*		Roads			Source of information
 
 		def self.load
-			roads_db = CouchRest.database!(CONFIG['roads_db'])
+			roads_db = CouchRest.database!(ENV['ROADS_DB'])
 			roads_headers = 'Name,Classification,Centx,Centy,Minx,Maxx,Miny,Maxy,Settlement,Locality,Cou_Unit,Local_Authority,Tile_10k,Tile_25k,Source'.split(',')
 
 			csv = File.expand_path('../../data/gazlco_gb/Data/OS_Locator2013_2_OPEN.txt', __FILE__)
@@ -206,7 +207,7 @@ module Upload
 	class CodePoint
 
 		def self.load
-			codepoint_db = CouchRest.database!(CONFIG['codepoint_db'])
+			codepoint_db = CouchRest.database!(ENV['CODEPOINT_DB'])
 			codepoint_headers = 'Postcode,Positional_quality_indicator,Eastings,Northings,Country_code,NHS_regional_HA_code,NHS_HA_code,Admin_county_code,Admin_district_code,Admin_ward_code'.split(',')
 
 			csv_dir = File.expand_path('../../data/codepo_gb/Data/CSV/', __FILE__)

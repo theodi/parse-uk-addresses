@@ -1,16 +1,17 @@
 require 'couchrest'
 require 'yaml'
+require 'Dotenv'
 
-CONFIG = YAML.load_file(File.expand_path('../../config/config.yml', __FILE__))
+Dotenv.load
 
 module AddressParser
 
 	class Address
 
-		@@codepoint_db = CouchRest.database!(CONFIG['codepoint_db'])
-		@@features_db = CouchRest.database!(CONFIG['features_db'])
-		@@roads_db = CouchRest.database!(CONFIG['roads_db'])
-		@@ons_db = CouchRest.database!(CONFIG['ons_db'])
+		@@codepoint_db = CouchRest.database!(ENV['CODEPOINT_DB'])
+		@@features_db = CouchRest.database!(ENV['FEATURES_DB'])
+		@@roads_db = CouchRest.database!(ENV['ROADS_DB'])
+		@@ons_db = CouchRest.database!(ENV['ONS_DB'])
 
 		def self.parse(address, postcode: nil)
 			parsed = {

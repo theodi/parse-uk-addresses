@@ -5,5 +5,6 @@ gem 'rake'
 gem 'rspec'
 gem 'cucumber'
 
+gem 'dotenv'
 gem 'couchrest'
 gem 'breasal', :github => 'theodi/breasal'
