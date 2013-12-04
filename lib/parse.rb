@@ -13,22 +13,23 @@ module AddressParser
 		@@roads_db = CouchRest.database!(ENV['ROADS_DB'])
 		@@ons_db = CouchRest.database!(ENV['ONS_DB'])
 
-		@@counties = @@features_db.view('unique/counties', { :group => true })['rows'].map { |r| r['key'] }
+		@@counties = @@features_db.view('counties/all', { :group => true })['rows'].map { |r| r['key'] }
+		@@cities = @@features_db.view('cities/all')['rows'].map { |r| r['key'] }
 
 		def self.parse(address, postcode: nil)
 			parsed = {
 				:address => address,
 				:remainder => address,
 				:postcode => postcode,
-				:city => "London",
 				:street => "Clifton Street",
 				:number => "65",
 				:errors => [],
 				:inferred => {}
 			}
 			populate_postcode(parsed)
-			populate_county(parsed)
-			puts parsed.to_yaml
+			populate_from_list(parsed, :county, @@counties)
+			populate_from_list(parsed, :city, @@cities)
+			# puts parsed.to_yaml
 			return parsed
 		end
 
@@ -53,15 +54,15 @@ module AddressParser
 			return parsed
 		end
 
-		def self.populate_county(parsed)
-			county = nil
-			@@counties.each do |c|
-				county = c if parsed[:remainder].end_with?(c)
+		def self.populate_from_list(parsed, property, list)
+			selected = nil
+			list.each do |item|
+				selected = item if parsed[:remainder].end_with?(item)
 			end
-			if county
-				parsed[:remainder] = parsed[:remainder].slice(0, parsed[:remainder].length - county.length)
+			if selected
+				parsed[:remainder] = parsed[:remainder].slice(0, parsed[:remainder].length - selected.length)
 				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
-				parsed[:county] = county
+				parsed[property] = selected
 			end
 			return parsed
 		end

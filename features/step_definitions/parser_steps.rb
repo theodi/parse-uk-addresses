@@ -13,3 +13,7 @@ Then(/whose (inferred )?([^ ]+)( ([^ ]+))? is (the (float))?(.+)$/) do |inferred
 	value = value.to_f if type == 'float'
 	test.should == value
 end
+
+Then(/has no ([^ ]+)$/) do |property|
+	@address[property.to_sym].should == nil
+end

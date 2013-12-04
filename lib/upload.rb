@@ -27,11 +27,18 @@ module Upload
 			}])
 
 			features_db.bulk_save([{
-				"_id" => "_design/unique",
+				"_id" => "_design/counties",
 				:views => {
-					:counties => {
+					:all => {
 						:map => "function(doc){emit(doc.FULL_COUNTY,1)}",
 						:reduce => "_sum"
+					}
+				}
+			}, {
+				"_id" => "_design/cities",
+				:views => {
+					:all => {
+						:map => "function(doc){if(doc.F_CODE === 'C'){emit(doc.DEF_NAM,doc.FULL_COUNTY)}}"
 					}
 				}
 			}])

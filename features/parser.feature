@@ -20,6 +20,15 @@ Feature: UK address parsing
 		When I parse the address 92, Liston Way, Woodford Green, Essex IG8 7BL
 		Then I get an address whose postcode is IG8 7BL
 		 And whose county is Essex
+		 And has no city
 		 # And whose locality is Woodford Green
 		 # And whose street is Liston Way
 		 # And whose number is 92
+
+	# Scenario: An address in a county which is a substring of another county
+	# 	South Gloucestershire ends with Gloucestershire
+	# 	North East Lincolnshire ends with Lincolnshire
+	# 	North Lincolnshire ends with Lincolnshire
+	# 	East Renfrewshire ends with Renfrewshire
+	# 	Bath and North East Somerset ends with Somerset
+	# 	North Somerset ends with Somerset
