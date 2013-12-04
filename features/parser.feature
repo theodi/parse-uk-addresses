@@ -17,9 +17,9 @@ Feature: UK address parsing
   	 And whose inferred health_authority name is London
 
 	Scenario: Parsing another address with a separate postcode
-		When I parse the address 92, Liston Way, Woodford Green, Essex with the postcode IG8 7BL
+		When I parse the address 92, Liston Way, Woodford Green, Essex IG8 7BL
 		Then I get an address whose postcode is IG8 7BL
-		 # And whose county is Essex
+		 And whose county is Essex
 		 # And whose locality is Woodford Green
 		 # And whose street is Liston Way
 		 # And whose number is 92

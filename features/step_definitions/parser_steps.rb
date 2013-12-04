@@ -1,8 +1,8 @@
 require 'rspec'
 require File.expand_path('../../../lib/parse', __FILE__)
 
-When(/^I parse the address (.+)( with the postcode (.+))?$/) do |address,m2,postcode|
-	@address = AddressParser::Address.parse(address, postcode: postcode)
+When(/^I parse the address (.+)$/) do |address|
+	@address = AddressParser::Address.parse(address)
 end
 
 Then(/whose (inferred )?([^ ]+)( ([^ ]+))? is (the (float))?(.+)$/) do |inferred, property, m3, subproperty, m5, type, value|

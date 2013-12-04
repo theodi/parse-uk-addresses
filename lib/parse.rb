@@ -13,6 +13,8 @@ module AddressParser
 		@@roads_db = CouchRest.database!(ENV['ROADS_DB'])
 		@@ons_db = CouchRest.database!(ENV['ONS_DB'])
 
+		@@counties = @@features_db.view('unique/counties', { :group => true })['rows'].map { |r| r['key'] }
+
 		def self.parse(address, postcode: nil)
 			parsed = {
 				:address => address,
@@ -25,6 +27,7 @@ module AddressParser
 				:inferred => {}
 			}
 			populate_postcode(parsed)
+			populate_county(parsed)
 			puts parsed.to_yaml
 			return parsed
 		end
@@ -47,6 +50,19 @@ module AddressParser
 			parsed[:inferred][:ward] = hash(@@ons_db.get(codepoint['Admin_ward_code']))
 			parsed[:inferred][:regional_health_authority] = hash(@@ons_db.get(codepoint['NHS_regional_HA_code'])) unless codepoint['NHS_regional_HA_code'] == ''
 			parsed[:inferred][:health_authority] = hash(@@ons_db.get(codepoint['NHS_HA_code'])) unless codepoint['NHS_HA_code'] == ''
+			return parsed
+		end
+
+		def self.populate_county(parsed)
+			county = nil
+			@@counties.each do |c|
+				county = c if parsed[:remainder].end_with?(c)
+			end
+			if county
+				parsed[:remainder] = parsed[:remainder].slice(0, parsed[:remainder].length - county.length)
+				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+				parsed[:county] = county
+			end
 			return parsed
 		end
 
