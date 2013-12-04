@@ -1,4 +1,0 @@
-ons_db: http://127.0.0.1:5984/ons
-features_db: http://127.0.0.1:5984/features
-roads_db: http://127.0.0.1:5984/roads
-codepoint_db: http://127.0.0.1:5984/codepoint
