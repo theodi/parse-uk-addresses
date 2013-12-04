@@ -25,6 +25,7 @@ module AddressParser
 				:inferred => {}
 			}
 			populate_postcode(parsed)
+			puts parsed.to_yaml
 			return parsed
 		end
 
@@ -38,15 +39,23 @@ module AddressParser
 					parsed[:postcode] = m[3]
 				end
 			end
-			# codepoint = @@codepoint_db.get(parsed[:postcode])
-			# parsed[:inferred][:lat] = codepoint['Location']['latitude']
-			# parsed[:inferred][:long] = codepoint['Location']['longitude']
-			# parsed[:inferred][:county] = @@ons_db.get(codepoint['Admin_county_code']).to_hash unless codepoint['Admin_county_code'] == ''
-			# parsed[:inferred][:district] = @@ons_db.get(codepoint['Admin_district_code']).to_hash
-			# parsed[:inferred][:ward] = @@ons_db.get(codepoint['Admin_ward_code']).to_hash
-			# parsed[:inferred][:regional_health_authority] = @@ons_db.get(codepoint['NHS_regional_HA_code']).to_hash unless codepoint['NHS_regional_HA_code'] == ''
-			# parsed[:inferred][:health_authority] = @@ons_db.get(codepoint['NHS_HA_code']).to_hash unless codepoint['NHS_HA_code'] == ''
+			codepoint = @@codepoint_db.get(parsed[:postcode])
+			parsed[:inferred][:lat] = codepoint['Location']['latitude']
+			parsed[:inferred][:long] = codepoint['Location']['longitude']
+			parsed[:inferred][:county] = hash(@@ons_db.get(codepoint['Admin_county_code'])) unless codepoint['Admin_county_code'] == ''
+			parsed[:inferred][:district] = hash(@@ons_db.get(codepoint['Admin_district_code']))
+			parsed[:inferred][:ward] = hash(@@ons_db.get(codepoint['Admin_ward_code']))
+			parsed[:inferred][:regional_health_authority] = hash(@@ons_db.get(codepoint['NHS_regional_HA_code'])) unless codepoint['NHS_regional_HA_code'] == ''
+			parsed[:inferred][:health_authority] = hash(@@ons_db.get(codepoint['NHS_HA_code'])) unless codepoint['NHS_HA_code'] == ''
 			return parsed
+		end
+
+		def self.hash(doc)
+			hash = {}
+			doc.each do |key,value|
+				hash[key.to_sym] = value unless key == '_rev'
+			end
+			return hash
 		end
 
 	end
