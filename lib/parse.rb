@@ -16,13 +16,10 @@ module AddressParser
 		@@counties = @@features_db.view('counties/all', { :group => true })['rows'].map { |r| r['key'] }
 		@@cities = @@features_db.view('cities/all')['rows'].map { |r| r['key'] }
 
-		def self.parse(address, postcode: nil)
+		def self.parse(address)
 			parsed = {
 				:address => address,
 				:remainder => address,
-				:postcode => postcode,
-				:street => "Clifton Street",
-				:number => "65",
 				:errors => [],
 				:inferred => {}
 			}
@@ -30,6 +27,7 @@ module AddressParser
 			populate_from_list(parsed, :county, @@counties)
 			populate_from_list(parsed, :city, @@cities)
 			populate_from_area(parsed)
+			populate_road(parsed)
 			# puts parsed.to_yaml
 			return parsed
 		end
@@ -59,12 +57,12 @@ module AddressParser
 		def self.populate_from_list(parsed, property, list)
 			selected = nil
 			list.each do |item|
-				selected = item if parsed[:remainder].end_with?(item)
+				selected = item if parsed[:remainder].upcase.end_with?(item.upcase)
 			end
 			if selected
+				parsed[property] = parsed[:remainder].slice(-selected.length, selected.length)
 				parsed[:remainder] = parsed[:remainder].slice(0, parsed[:remainder].length - selected.length)
 				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
-				parsed[property] = selected
 			end
 			return parsed
 		end
@@ -79,17 +77,34 @@ module AddressParser
 			inlat['rows'].each do |f|
 				inlatlong.push(f['id']) if f['key'][1] >= startkey[1] && f['key'][1] < endkey[1]
 			end
-			towns = []
-			localities = []
+			towns = {}
+			localities = {}
 			@@features_db.get_bulk(inlatlong)['rows'].each do |feature|
 				if feature['doc']['F_CODE'] == 'T'
-					towns.push(feature['doc']['DEF_NAM'])
+					towns[feature['doc']['DEF_NAM']] = feature['doc']
 				else
-					localities.push(feature['doc']['DEF_NAM'])
+					localities[feature['doc']['DEF_NAM']] = feature['doc']
 				end
 			end
-			populate_from_list(parsed, :town, towns)
-			populate_from_list(parsed, :locality, localities)
+			populate_from_list(parsed, :town, towns.keys)
+			populate_from_list(parsed, :locality, localities.keys)
+		end
+
+		def self.populate_road(parsed)
+			location = [parsed[:inferred][:lat], parsed[:inferred][:long]]
+			fuzz = parsed[:inferred][:pqi].to_f / 3000
+			startkey = [location[0] - fuzz, location[1] - fuzz]
+			endkey = [location[0] + fuzz, location[1] + fuzz]
+			inlat = @@roads_db.view('roads_by_location/all', {:startkey => startkey, :endkey => endkey})
+			inlatlong = []
+			inlat['rows'].each do |f|
+				inlatlong.push(f['id']) if f['key'][1] >= startkey[1] && f['key'][1] < endkey[1]
+			end
+			roads = {}
+			@@roads_db.get_bulk(inlatlong)['rows'].each do |road|
+				roads[road['doc']['Name']] = road['doc']
+			end
+			populate_from_list(parsed, :street, roads.keys)
 		end
 
 		def self.hash(doc)

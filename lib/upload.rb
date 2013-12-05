@@ -50,6 +50,15 @@ module Upload
 				}
 			}])
 
+			roads_db.bulk_save([{
+				"_id" => "_design/roads_by_location",
+				:views => {
+					:all => {
+						:map => "function(doc){emit([doc.Centre.latitude,doc.Centre.longitude],doc._id)}"
+					}
+				}
+			}])
+
 		end
 
 	end
