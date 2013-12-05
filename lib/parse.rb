@@ -28,6 +28,7 @@ module AddressParser
 			populate_from_list(parsed, :city, @@cities)
 			populate_from_area(parsed)
 			populate_road(parsed)
+			populate_number(parsed)
 			puts parsed.to_yaml
 			return parsed
 		end
@@ -108,6 +109,16 @@ module AddressParser
 			road = roads[parsed[:street].upcase]
 			parsed[:inferred][:tile_10k] = road['Tile_10k']
 			parsed[:inferred][:tile_25k] = road['Tile_25k']
+		end
+
+		def self.populate_number(parsed)
+			m = /^(.+(\s|,))?([0-9]+[a-zA-Z]?)$/.match(parsed[:remainder])
+			if m
+				parsed[:remainder] = m[1] || ''
+				parsed[:number] = m[3]
+				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+			end
+			return parsed
 		end
 
 		def self.hash(doc)

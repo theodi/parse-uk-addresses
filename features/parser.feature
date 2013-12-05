@@ -8,7 +8,7 @@ Feature: UK address parsing
 		Then I get an address whose postcode is EC2A 4JE
 		 And whose city is London
 		 And whose street is Clifton Street
-		 # And whose number is 65
+		 And whose number is 65
 		 And whose inferred lat is the float 51.52238743450444
   	 And whose inferred long is the float -0.08364849577490492
   	 And whose inferred district name is Hackney
@@ -23,12 +23,13 @@ Feature: UK address parsing
 		 And has no city
 		 And whose locality is Woodford Green
 		 And whose street is Liston Way
-		 # And whose number is 92
+		 And whose number is 92
 
 	Scenario: Parsing an address where the town is a fair distance from the location
 		When I parse the address 88 Briarwood Road, Epsom KT17 2NG
 		Then I get an address whose town is Epsom
 		 And whose street is Briarwood Road
+		 And whose number is 88
 
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire
