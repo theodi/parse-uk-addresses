@@ -42,6 +42,7 @@ module AddressParser
 				if m
 					parsed[:remainder] = m[1]
 					parsed[:postcode] = m[3]
+					parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
 				end
 			end
 			codepoint = @@codepoint_db.get(parsed[:postcode])

@@ -35,6 +35,13 @@ Feature: UK address parsing
 		 And whose street is Briarwood Road
 		 And whose number is 88
 
+  Scenario: Parsing an address without a number
+    When I parse the address Royal Opera House, Covent Garden, London, WC2E 9DD
+    Then I get an address whose postcode is WC2E 9DD
+     And whose city is London
+     And whose street is Covent Garden
+     And whose line1 is Royal Opera House
+
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire
 	# 	North East Lincolnshire ends with Lincolnshire
