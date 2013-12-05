@@ -29,6 +29,7 @@ module AddressParser
 			populate_postcode(parsed)
 			populate_from_list(parsed, :county, @@counties)
 			populate_from_list(parsed, :city, @@cities)
+			populate_from_area(parsed)
 			# puts parsed.to_yaml
 			return parsed
 		end
@@ -46,6 +47,7 @@ module AddressParser
 			codepoint = @@codepoint_db.get(parsed[:postcode])
 			parsed[:inferred][:lat] = codepoint['Location']['latitude']
 			parsed[:inferred][:long] = codepoint['Location']['longitude']
+			parsed[:inferred][:pqi] = codepoint['Positional_quality_indicator'].to_i
 			parsed[:inferred][:county] = hash(@@ons_db.get(codepoint['Admin_county_code'])) unless codepoint['Admin_county_code'] == ''
 			parsed[:inferred][:district] = hash(@@ons_db.get(codepoint['Admin_district_code']))
 			parsed[:inferred][:ward] = hash(@@ons_db.get(codepoint['Admin_ward_code']))
@@ -65,6 +67,29 @@ module AddressParser
 				parsed[property] = selected
 			end
 			return parsed
+		end
+
+		def self.populate_from_area(parsed)
+			location = [parsed[:inferred][:lat], parsed[:inferred][:long]]
+			fuzz = parsed[:inferred][:pqi].to_f / 500
+			startkey = [location[0] - fuzz, location[1] - fuzz]
+			endkey = [location[0] + fuzz, location[1] + fuzz]
+			inlat = @@features_db.view('localities_by_location/all', {:startkey => startkey, :endkey => endkey})
+			inlatlong = []
+			inlat['rows'].each do |f|
+				inlatlong.push(f['id']) if f['key'][1] >= startkey[1] && f['key'][1] < endkey[1]
+			end
+			towns = []
+			localities = []
+			@@features_db.get_bulk(inlatlong)['rows'].each do |feature|
+				if feature['doc']['F_CODE'] == 'T'
+					towns.push(feature['doc']['DEF_NAM'])
+				else
+					localities.push(feature['doc']['DEF_NAM'])
+				end
+			end
+			populate_from_list(parsed, :town, towns)
+			populate_from_list(parsed, :locality, localities)
 		end
 
 		def self.hash(doc)

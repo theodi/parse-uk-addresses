@@ -21,7 +21,7 @@ Feature: UK address parsing
 		Then I get an address whose postcode is IG8 7BL
 		 And whose county is Essex
 		 And has no city
-		 # And whose locality is Woodford Green
+		 And whose locality is Woodford Green
 		 # And whose street is Liston Way
 		 # And whose number is 92
 

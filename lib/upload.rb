@@ -38,7 +38,14 @@ module Upload
 				"_id" => "_design/cities",
 				:views => {
 					:all => {
-						:map => "function(doc){if(doc.F_CODE === 'C'){emit(doc.DEF_NAM,doc.FULL_COUNTY)}}"
+						:map => "function(doc){if(doc.F_CODE==='C'){emit(doc.DEF_NAM,doc.FULL_COUNTY)}}"
+					}
+				}
+			}, {
+				"_id" => "_design/localities_by_location",
+				:views => {
+					:all => {
+						:map => "function(doc){if(doc.F_CODE==='T'||doc.F_CODE==='O'){emit([doc.Location.latitude,doc.Location.longitude],doc._id)}}"
 					}
 				}
 			}])
