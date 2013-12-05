@@ -30,7 +30,7 @@ module AddressParser
 			populate_road(parsed)
 			populate_number(parsed)
 			populate_floor(parsed)
-			puts parsed.to_yaml
+			parsed[:line1] = parsed[:remainder] if parsed[:remainder] != ''
 			return parsed
 		end
 
