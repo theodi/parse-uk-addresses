@@ -28,7 +28,7 @@ module AddressParser
 			populate_from_list(parsed, :city, @@cities)
 			populate_from_area(parsed)
 			populate_road(parsed)
-			# puts parsed.to_yaml
+			puts parsed.to_yaml
 			return parsed
 		end
 
@@ -93,18 +93,21 @@ module AddressParser
 		def self.populate_road(parsed)
 			location = [parsed[:inferred][:lat], parsed[:inferred][:long]]
 			fuzz = parsed[:inferred][:pqi].to_f / 3000
-			startkey = [location[0] - fuzz, location[1] - fuzz]
-			endkey = [location[0] + fuzz, location[1] + fuzz]
+			startkey = [parsed[:inferred][:ward][:name], location[0] - fuzz, location[1] - fuzz]
+			endkey = [parsed[:inferred][:ward][:name], location[0] + fuzz, location[1] + fuzz]
 			inlat = @@roads_db.view('roads_by_location/all', {:startkey => startkey, :endkey => endkey})
 			inlatlong = []
 			inlat['rows'].each do |f|
-				inlatlong.push(f['id']) if f['key'][1] >= startkey[1] && f['key'][1] < endkey[1]
+				inlatlong.push(f['id']) if f['key'][2] >= startkey[2] && f['key'][2] < endkey[2]
 			end
 			roads = {}
 			@@roads_db.get_bulk(inlatlong)['rows'].each do |road|
 				roads[road['doc']['Name']] = road['doc']
 			end
 			populate_from_list(parsed, :street, roads.keys)
+			road = roads[parsed[:street].upcase]
+			parsed[:inferred][:tile_10k] = road['Tile_10k']
+			parsed[:inferred][:tile_25k] = road['Tile_25k']
 		end
 
 		def self.hash(doc)
