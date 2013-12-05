@@ -9,6 +9,7 @@ Feature: UK address parsing
 		 And whose city is London
 		 And whose street is Clifton Street
 		 And whose number is 65
+		 And whose floor is 3rd Floor
 		 And whose inferred lat is the float 51.52238743450444
   	 And whose inferred long is the float -0.08364849577490492
   	 And whose inferred district name is Hackney

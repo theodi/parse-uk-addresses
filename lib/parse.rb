@@ -29,6 +29,7 @@ module AddressParser
 			populate_from_area(parsed)
 			populate_road(parsed)
 			populate_number(parsed)
+			populate_floor(parsed)
 			puts parsed.to_yaml
 			return parsed
 		end
@@ -116,6 +117,16 @@ module AddressParser
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:number] = m[3]
+				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+			end
+			return parsed
+		end
+
+		def self.populate_floor(parsed)
+			m = /^(.+(\s|,))?([0-9]+[a-zA-Z]* Floor|Floor [0-9]+[a-zA-Z]*)$/i.match(parsed[:remainder])
+			if m
+				parsed[:remainder] = m[1] || ''
+				parsed[:floor] = m[3]
 				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
 			end
 			return parsed
