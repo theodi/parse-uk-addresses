@@ -25,6 +25,10 @@ Feature: UK address parsing
 		 # And whose street is Liston Way
 		 # And whose number is 92
 
+	Scenario: Parsing an address where the town is a fair distance from the location
+		When I parse the address 88 Briarwood Road, Epsom KT17 2NG
+		Then I get an address whose town is Epsom
+
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire
 	# 	North East Lincolnshire ends with Lincolnshire

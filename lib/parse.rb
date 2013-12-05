@@ -71,7 +71,7 @@ module AddressParser
 
 		def self.populate_from_area(parsed)
 			location = [parsed[:inferred][:lat], parsed[:inferred][:long]]
-			fuzz = parsed[:inferred][:pqi].to_f / 500
+			fuzz = parsed[:inferred][:pqi].to_f / 300
 			startkey = [location[0] - fuzz, location[1] - fuzz]
 			endkey = [location[0] + fuzz, location[1] + fuzz]
 			inlat = @@features_db.view('localities_by_location/all', {:startkey => startkey, :endkey => endkey})
