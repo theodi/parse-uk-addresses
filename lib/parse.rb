@@ -28,7 +28,7 @@ module AddressParser
 			populate_from_list(parsed, :city, @@cities)
 			populate_from_area(parsed)
 			populate_road(parsed)
-			populate_number(parsed)
+			populate_name_or_number(parsed)
 			populate_floor(parsed)
 			parsed[:line1] = parsed[:remainder] if parsed[:remainder] != ''
 			return parsed
@@ -60,7 +60,7 @@ module AddressParser
 		def self.populate_from_list(parsed, property, list)
 			selected = nil
 			list.each do |item|
-				selected = item if parsed[:remainder].upcase.end_with?(item.upcase)
+				selected = item if Regexp.new("\\b#{item}$", Regexp::IGNORECASE) =~ parsed[:remainder]
 			end
 			if selected
 				parsed[property] = parsed[:remainder].slice(-selected.length, selected.length)
@@ -135,12 +135,19 @@ module AddressParser
 			return roads
 		end
 
-		def self.populate_number(parsed)
+		def self.populate_name_or_number(parsed)
 			m = /^(.+(\s|,))?([0-9]+[a-zA-Z]*(-[0-9]+[a-zA-Z]*)?)$/.match(parsed[:remainder])
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:number] = m[3]
 				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+			else
+				m = /^(.+,\s*)?([^,]+)$/.match(parsed[:remainder])
+				if m
+					parsed[:remainder] = m[1] || ''
+					parsed[:name] = m[2]
+					parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+				end
 			end
 			return parsed
 		end

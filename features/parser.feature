@@ -35,12 +35,14 @@ Feature: UK address parsing
 		 And whose street is Briarwood Road
 		 And whose number is 88
 
+# The following scenarios with thanks to http://www.mjt.me.uk/posts/falsehoods-programmers-believe-about-addresses/
+
   Scenario: Parsing an address without a number
     When I parse the address Royal Opera House, Covent Garden, London, WC2E 9DD
     Then I get an address whose postcode is WC2E 9DD
      And whose city is London
      And whose street is Covent Garden
-     And whose line1 is Royal Opera House
+     And whose name is Royal Opera House
 
   Scenario: Parsing an address where the street is in an old (1990) Ward
   	When I parse the address 1A Egmont Road, Middlesbrough, TS4 2HT
@@ -55,6 +57,13 @@ Feature: UK address parsing
   	 And whose city is London
   	 And whose street is Bonhill Street
   	 And whose number is 4-5
+
+  Scenario: Parsing an address whose town ends in a city name
+  	When I parse the address Minusone Priory Road, Newbury, RG14 7QS
+  	Then I get an address whose postcode is RG14 7QS
+  	 And whose town is Newbury
+  	 And whose street is Priory Road
+  	 And whose name is Minusone
 
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire
