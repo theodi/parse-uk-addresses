@@ -49,6 +49,13 @@ Feature: UK address parsing
   	 And whose street is Egmont Road
   	 And whose number is 1A
 
+  Scenario: Parsing an address with a number range
+  	When I parse the address 4-5 Bonhill Street, London, EC2A 4BX
+  	Then I get an address whose postcode is EC2A 4BX
+  	 And whose city is London
+  	 And whose street is Bonhill Street
+  	 And whose number is 4-5
+
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire
 	# 	North East Lincolnshire ends with Lincolnshire

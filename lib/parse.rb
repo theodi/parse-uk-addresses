@@ -136,7 +136,7 @@ module AddressParser
 		end
 
 		def self.populate_number(parsed)
-			m = /^(.+(\s|,))?([0-9]+[a-zA-Z]?)$/.match(parsed[:remainder])
+			m = /^(.+(\s|,))?([0-9]+[a-zA-Z]*(-[0-9]+[a-zA-Z]*)?)$/.match(parsed[:remainder])
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:number] = m[3]
