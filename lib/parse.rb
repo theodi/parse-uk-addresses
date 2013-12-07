@@ -36,12 +36,13 @@ module AddressParser
 				parsed[:line1] = parsed[:remainder] if parsed[:remainder] != ''
 			else
 				parsed[:errors].push('ERR_NOSTREET')
-				parsed[:unmatched] = parsed[:remainder]
+				parsed[:unmatched] = parsed[:remainder] if parsed[:remainder] != ''
 				parsed[:remainder] = ''
 			end
 			unless parsed[:city] || parsed[:town] || parsed[:locality]
 				parsed[:errors].push('ERR_NOAREA')
 			end
+			# puts parsed.to_yaml
 			return parsed
 		end
 
@@ -69,17 +70,13 @@ module AddressParser
 		end
 
 		def self.populate_from_list(parsed, property, list)
-			# unless [:county,:city].include?(property)
-			# 	puts property.to_s
-			# 	puts list.sort_by{|i| i.length}.reverse
-			# end
 			list.sort_by{|i| i.length}.reverse.each do |item|
 				m = Regexp.new("(.+)\\b(#{item})(,\s*.+)?$", Regexp::IGNORECASE).match(parsed[:remainder])
 				if m
 					parsed[:remainder] = m[1]
 					parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
 					parsed[property] = m[2]
-					parsed[:unmatched] = m[3] ? m[3].gsub!(/^(,\s*|,?\s+)/, '') : nil
+					parsed[:unmatched] = m[3].gsub!(/^(,\s*|,?\s+)/, '') if m[3]
 					break
 				end
 			end
@@ -100,9 +97,13 @@ module AddressParser
 			localities = {}
 			@@features_db.get_bulk(inlatlong)['rows'].each do |feature|
 				if feature['doc']['F_CODE'] == 'T'
-					towns[feature['doc']['DEF_NAM']] = feature['doc']
+					feature['doc']['DEF_NAM'].split('/').each do |t|
+						towns[t] = feature['doc']
+					end
 				else
-					localities[feature['doc']['DEF_NAM']] = feature['doc']
+					feature['doc']['DEF_NAM'].split('/').each do |t|
+						localities[t] = feature['doc']
+					end
 				end
 			end
 			populate_from_list(parsed, :town, towns.keys)
@@ -118,12 +119,14 @@ module AddressParser
 			populate_from_list(parsed, :street, roads.keys)
 			unless parsed[:street]
 				district = parsed[:inferred][:district][:full_name]
+				district = district.gsub(' - ', ' / ')
 				startkey[0] = district
 				endkey[0] = district
 				roads = get_roads('roads_by_location_in_district/all', startkey, endkey)
 				populate_from_list(parsed, :street, roads.keys)
 				if !parsed[:street] && (parsed[:inferred][:county] || parsed[:county])
 					county = parsed[:inferred][:county] ? parsed[:inferred][:county][:full_name] : parsed[:county]
+					county = county.gsub(' - ', ' / ')
 					startkey[0] = county
 					endkey[0] = county
 					roads = get_roads('roads_by_location_in_county/all', startkey, endkey)
@@ -146,7 +149,7 @@ module AddressParser
 			end
 			roads = {}
 			@@roads_db.get_bulk(inlatlong)['rows'].each do |road|
-				roads[road['doc']['Name']] = road['doc']
+				roads[road['doc']['Name']] = road['doc'] if road['doc']['Name']
 			end
 			return roads
 		end

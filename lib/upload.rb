@@ -95,6 +95,7 @@ module Upload
 
 		def self.load
 			ons_db = CouchRest.database!(ENV['ONS_DB'])
+			# ons data from codepoint
 			area_types = {
 				"CTY" => / County$/,
 				"DIS" => / District( \(B\))?$/,
@@ -129,6 +130,32 @@ module Upload
 				result = ons_db.bulk_save(docs)
 				puts "... done: #{result[0].inspect}"
 			end
+			# ons data from ons
+			docs = []
+			csv = File.expand_path("../../data/ons/CTRY12_GOR10_CTY12_LAD12_WD12_UK_LU.csv", __FILE__)
+			CSV.foreach(csv, encoding:'iso-8859-1:utf-8', headers: :first_row) do |row|
+				doc = {
+					"_id" => row['CTY12CD'], 
+					:type => 'CTY',
+					:name => row['CTY12NM']
+				}
+				docs.push(doc)
+				doc = {
+					"_id" => row['LAD12CD'], 
+					:type => 'LAD',
+					:name => row['LAD12NM']
+				}
+				docs.push(doc)
+				doc = {
+					"_id" => row['WD12CD'], 
+					:type => 'WD',
+					:name => row['WD12NM']
+				}
+				docs.push(doc)
+			end
+			puts "Loading #{docs.length} CTY, LAD & WD areas ..."
+			result = ons_db.bulk_save(docs)
+			puts "... done: #{result[0].inspect}"
 		end
 
 	end

@@ -93,6 +93,14 @@ Feature: UK address parsing
   	 And whose name is Ziggurat Building
   	 And whose flat is Flat 1.4
 
+  Scenario: Parsing an address in Wales
+  	When I parse the address 50 Ammanford Road, Tycroes, Ammanford, SA18 3QJ
+  	Then I get an address whose postcode is SA18 3QJ
+  	 And whose town is Ammanford
+  	 And whose locality is Tycroes
+  	 And whose street is Ammanford Road
+  	 And whose number is 50
+
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire
 	# 	North East Lincolnshire ends with Lincolnshire
