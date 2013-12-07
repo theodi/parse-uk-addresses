@@ -17,3 +17,11 @@ end
 Then(/has no ([^ ]+)$/) do |property|
 	@address[property.to_sym].should == nil
 end
+
+Then(/with the error ([^ ]+)$/) do |code|
+	@address[:errors].include?(code)
+end
+
+Then(/with the unmatched text (.+)$/) do |text|
+	@address[:unmatched] = text
+end

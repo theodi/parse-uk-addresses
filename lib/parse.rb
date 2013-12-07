@@ -28,9 +28,18 @@ module AddressParser
 			populate_from_list(parsed, :city, @@cities)
 			populate_from_area(parsed)
 			populate_road(parsed)
-			populate_name_or_number(parsed)
-			populate_floor(parsed)
-			parsed[:line1] = parsed[:remainder] if parsed[:remainder] != ''
+			if parsed[:street]
+				populate_name_or_number(parsed)
+				populate_floor(parsed)
+				parsed[:line1] = parsed[:remainder] if parsed[:remainder] != ''
+			else
+				parsed[:errors].push('ERR_NOSTREET')
+				parsed[:unmatched] = parsed[:remainder]
+				parsed[:remainder] = ''
+			end
+			unless parsed[:city] || parsed[:town] || parsed[:locality]
+				parsed[:errors].push('ERR_NOAREA')
+			end
 			return parsed
 		end
 
@@ -58,14 +67,19 @@ module AddressParser
 		end
 
 		def self.populate_from_list(parsed, property, list)
-			selected = nil
-			list.each do |item|
-				selected = item if Regexp.new("\\b#{item}$", Regexp::IGNORECASE) =~ parsed[:remainder]
-			end
-			if selected
-				parsed[property] = parsed[:remainder].slice(-selected.length, selected.length)
-				parsed[:remainder] = parsed[:remainder].slice(0, parsed[:remainder].length - selected.length)
-				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+			# unless [:county,:city].include?(property)
+			# 	puts property.to_s
+			# 	puts list.sort_by{|i| i.length}.reverse
+			# end
+			list.sort_by{|i| i.length}.reverse.each do |item|
+				m = Regexp.new("(.+)\\b(#{item})(,\s*.+)?$", Regexp::IGNORECASE).match(parsed[:remainder])
+				if m
+					parsed[:remainder] = m[1]
+					parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+					parsed[property] = m[2]
+					parsed[:unmatched] = m[3] ? m[3].gsub!(/^(,\s*|,?\s+)/, '') : nil
+					break
+				end
 			end
 			return parsed
 		end

@@ -65,6 +65,25 @@ Feature: UK address parsing
   	 And whose street is Priory Road
   	 And whose name is Minusone
 
+  Scenario: Parsing an address with wrong city and road
+  	When I parse the address Idas Court, 4-6 Princes Road, Hull, HU5 2RD
+  	Then I get an address whose postcode is HU5 2RD
+  	 And has no city
+  	 And has no street
+  	 And has no number
+  	 And has no name
+  	 And with the error ERR_NOAREA
+  	 And with the error ERR_NOSTREET
+  	 And with the unmatched text Idas Court, 4-6 Princes Road, Hull
+
+  # Scenario: Parsing an address with a name and a number
+  # 	When I parse the address Idas Court, 4-6 Prince's Road, Kingston upon Hull, HU5 2RD
+  # 	Then I get an address whose postcode is HU5 2RD
+  # 	 And has the city Kingston upon Hull
+  # 	 And has the street Prince's Road
+  # 	 And has the number 4-6
+  # 	 And has the name Idas Court
+
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire
 	# 	North East Lincolnshire ends with Lincolnshire
