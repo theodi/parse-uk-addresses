@@ -29,7 +29,8 @@ module AddressParser
 			populate_from_area(parsed)
 			populate_road(parsed)
 			if parsed[:street]
-				populate_name_or_number(parsed)
+				populate_number(parsed)
+				populate_name(parsed)
 				populate_floor(parsed)
 				parsed[:line1] = parsed[:remainder] if parsed[:remainder] != ''
 			else
@@ -149,19 +150,22 @@ module AddressParser
 			return roads
 		end
 
-		def self.populate_name_or_number(parsed)
+		def self.populate_number(parsed)
 			m = /^(.+(\s|,))?([0-9]+[a-zA-Z]*(-[0-9]+[a-zA-Z]*)?)$/.match(parsed[:remainder])
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:number] = m[3]
 				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
-			else
-				m = /^(.+,\s*)?([^,]+)$/.match(parsed[:remainder])
-				if m
-					parsed[:remainder] = m[1] || ''
-					parsed[:name] = m[2]
-					parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
-				end
+			end
+			return parsed
+		end
+
+		def self.populate_name(parsed)
+			m = /^(.+,\s*)?([^,]+)$/.match(parsed[:remainder])
+			if m && !(/\b(floor|flat)\b/i =~ m[2])
+				parsed[:remainder] = m[1] || ''
+				parsed[:name] = m[2]
+				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
 			end
 			return parsed
 		end

@@ -76,13 +76,13 @@ Feature: UK address parsing
   	 And with the error ERR_NOSTREET
   	 And with the unmatched text Idas Court, 4-6 Princes Road, Hull
 
-  # Scenario: Parsing an address with a name and a number
-  # 	When I parse the address Idas Court, 4-6 Prince's Road, Kingston upon Hull, HU5 2RD
-  # 	Then I get an address whose postcode is HU5 2RD
-  # 	 And has the city Kingston upon Hull
-  # 	 And has the street Prince's Road
-  # 	 And has the number 4-6
-  # 	 And has the name Idas Court
+  Scenario: Parsing an address with a name and a number
+  	When I parse the address Idas Court, 4-6 Prince's Road, Kingston upon Hull, HU5 2RD
+  	Then I get an address whose postcode is HU5 2RD
+  	 And whose city is Kingston upon Hull
+  	 And whose street is Prince's Road
+  	 And whose number is 4-6
+  	 And whose name is Idas Court
 
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire
