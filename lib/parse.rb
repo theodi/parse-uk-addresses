@@ -32,6 +32,7 @@ module AddressParser
 				populate_number(parsed)
 				populate_name(parsed)
 				populate_floor(parsed)
+				populate_flat(parsed)
 				parsed[:line1] = parsed[:remainder] if parsed[:remainder] != ''
 			else
 				parsed[:errors].push('ERR_NOSTREET')
@@ -175,6 +176,16 @@ module AddressParser
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:floor] = m[3]
+				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+			end
+			return parsed
+		end
+
+		def self.populate_flat(parsed)
+			m = /^(.+(\s|,))?(Flat [^,]*)$/i.match(parsed[:remainder])
+			if m
+				parsed[:remainder] = m[1] || ''
+				parsed[:flat] = m[3]
 				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
 			end
 			return parsed

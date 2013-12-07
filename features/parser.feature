@@ -84,6 +84,15 @@ Feature: UK address parsing
   	 And whose number is 4-6
   	 And whose name is Idas Court
 
+  Scenario: Parsing an address with a flat number
+  	When I parse the address Flat 1.4, Ziggurat Building, 60-66 Saffron Hill, London, EC1N 8QX
+  	Then I get an address whose postcode is EC1N 8QX
+  	 And whose city is London
+  	 And whose street is Saffron Hill
+  	 And whose number is 60-66
+  	 And whose name is Ziggurat Building
+  	 And whose flat is Flat 1.4
+
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire
 	# 	North East Lincolnshire ends with Lincolnshire
