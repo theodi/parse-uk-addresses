@@ -98,7 +98,32 @@ module AddressParser
 			fuzz = parsed[:inferred][:pqi].to_f / 3000
 			startkey = [parsed[:inferred][:ward][:name], location[0] - fuzz, location[1] - fuzz]
 			endkey = [parsed[:inferred][:ward][:name], location[0] + fuzz, location[1] + fuzz]
-			inlat = @@roads_db.view('roads_by_location/all', {:startkey => startkey, :endkey => endkey})
+			roads = get_roads('roads_by_location/all', startkey, endkey)
+			populate_from_list(parsed, :street, roads.keys)
+			unless parsed[:street]
+				district = parsed[:inferred][:district][:full_name]
+				startkey[0] = district
+				endkey[0] = district
+				roads = get_roads('roads_by_location_in_district/all', startkey, endkey)
+				populate_from_list(parsed, :street, roads.keys)
+				if !parsed[:street] && (parsed[:inferred][:county] || parsed[:county])
+					county = parsed[:inferred][:county] ? parsed[:inferred][:county][:full_name] : parsed[:county]
+					startkey[0] = county
+					endkey[0] = county
+					roads = get_roads('roads_by_location_in_county/all', startkey, endkey)
+					populate_from_list(parsed, :street, roads.keys)
+				end
+			end
+			if parsed[:street]
+				road = roads[parsed[:street].upcase]
+				parsed[:inferred][:tile_10k] = road['Tile_10k']
+				parsed[:inferred][:tile_25k] = road['Tile_25k']
+			end
+			return parsed
+		end
+
+		def self.get_roads(view, startkey, endkey)
+			inlat = @@roads_db.view(view, {:startkey => startkey, :endkey => endkey})
 			inlatlong = []
 			inlat['rows'].each do |f|
 				inlatlong.push(f['id']) if f['key'][2] >= startkey[2] && f['key'][2] < endkey[2]
@@ -107,10 +132,7 @@ module AddressParser
 			@@roads_db.get_bulk(inlatlong)['rows'].each do |road|
 				roads[road['doc']['Name']] = road['doc']
 			end
-			populate_from_list(parsed, :street, roads.keys)
-			road = roads[parsed[:street].upcase]
-			parsed[:inferred][:tile_10k] = road['Tile_10k']
-			parsed[:inferred][:tile_25k] = road['Tile_25k']
+			return roads
 		end
 
 		def self.populate_number(parsed)

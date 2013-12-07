@@ -42,6 +42,13 @@ Feature: UK address parsing
      And whose street is Covent Garden
      And whose line1 is Royal Opera House
 
+  Scenario: Parsing an address where the street is in an old (1990) Ward
+  	When I parse the address 1A Egmont Road, Middlesbrough, TS4 2HT
+  	Then I get an address whose postcode is TS4 2HT
+  	 And whose county is Middlesbrough
+  	 And whose street is Egmont Road
+  	 And whose number is 1A
+
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire
 	# 	North East Lincolnshire ends with Lincolnshire

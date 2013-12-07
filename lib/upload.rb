@@ -48,6 +48,13 @@ module Upload
 						:map => "function(doc){if(doc.F_CODE==='T'||doc.F_CODE==='O'){emit([doc.Location.latitude,doc.Location.longitude],doc._id)}}"
 					}
 				}
+			}, {
+				"_id" => "_design/features_by_name",
+				:views => {
+					:all => {
+						:map => "function(doc){emit(doc.DEF_NAM,doc.F_CODE)}"
+					}
+				}
 			}])
 
 			roads_db.bulk_save([{
@@ -55,6 +62,27 @@ module Upload
 				:views => {
 					:all => {
 						:map => "function(doc){emit([doc.Locality,doc.Centre.latitude,doc.Centre.longitude],doc._id)}"
+					}
+				}
+			}, {
+				"_id" => "_design/roads_by_location_in_district",
+				:views => {
+					:all => {
+						:map => "function(doc){emit([doc.Local_Authority,doc.Centre.latitude,doc.Centre.longitude],doc._id)}"
+					}
+				}
+			}, {
+				"_id" => "_design/roads_by_location_in_county",
+				:views => {
+					:all => {
+						:map => "function(doc){emit([doc.Cou_Unit,doc.Centre.latitude,doc.Centre.longitude],doc._id)}"
+					}
+				}
+			}, {
+				"_id" => "_design/roads_by_name",
+				:views => {
+					:all => {
+						:map => "function(doc){emit(doc.Name,doc.Locality)}"
 					}
 				}
 			}])
@@ -91,6 +119,7 @@ module Upload
 						doc = {
 							"_id" => pattern ? row['code'] : row['name'], 
 							:type => type.sub(/_/,' '),
+							:full_name => pattern ? row['name'] : row['code'],
 							:name => pattern ? row['name'].sub(pattern, '') : row['code']
 						}
 						docs.push(doc)
