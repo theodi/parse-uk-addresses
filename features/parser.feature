@@ -101,6 +101,14 @@ Feature: UK address parsing
   	 And whose street is Ammanford Road
   	 And whose number is 50
 
+  Scenario: Parsing an address whose street ends with a locality name
+  	When I parse the address 3 Store, 311-318 High Holborn, London, WC1V 7BN
+  	Then I get an address whose postcode is WC1V 7BN
+  	 And whose city is London
+  	 And whose street is High Holborn
+  	 And whose number is 311-318
+  	 And whose name is 3 Store
+
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire
 	# 	North East Lincolnshire ends with Lincolnshire

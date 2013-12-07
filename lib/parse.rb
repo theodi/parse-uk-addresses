@@ -71,12 +71,12 @@ module AddressParser
 
 		def self.populate_from_list(parsed, property, list)
 			list.sort_by{|i| i.length}.reverse.each do |item|
-				m = Regexp.new("(.+)\\b(#{item})(,\s*.+)?$", Regexp::IGNORECASE).match(parsed[:remainder])
+				m = Regexp.new("(.+#{property == :street ? '\s+' : ',\s*'})(#{item})(,\s*.+)?$", Regexp::IGNORECASE).match(parsed[:remainder])
 				if m
 					parsed[:remainder] = m[1]
-					parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+					parsed[:remainder].gsub!(/(,\s*|\s+)$/, '')
 					parsed[property] = m[2]
-					parsed[:unmatched] = m[3].gsub!(/^(,\s*|,?\s+)/, '') if m[3]
+					parsed[:unmatched] = m[3].gsub!(/^(,\s*|\s+)/, '') if m[3]
 					break
 				end
 			end
@@ -112,7 +112,7 @@ module AddressParser
 
 		def self.populate_road(parsed)
 			location = [parsed[:inferred][:lat], parsed[:inferred][:long]]
-			fuzz = parsed[:inferred][:pqi].to_f / 3000
+			fuzz = parsed[:inferred][:pqi].to_f / 2500
 			startkey = [parsed[:inferred][:ward][:name], location[0] - fuzz, location[1] - fuzz]
 			endkey = [parsed[:inferred][:ward][:name], location[0] + fuzz, location[1] + fuzz]
 			roads = get_roads('roads_by_location/all', startkey, endkey)
