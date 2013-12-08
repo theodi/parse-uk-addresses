@@ -38,10 +38,10 @@ module AddressParser
 				populate_name(parsed)
 				populate_floor(parsed)
 				populate_flat(parsed)
-				populate_organisation(parsed)
-				populate_department(parsed)
+				populate_lines(parsed)
+			else
+				parsed[:unmatched] = parsed[:remainder] if parsed[:remainder] != ''
 			end
-			parsed[:unmatched] = parsed[:remainder] if parsed[:remainder] != ''
 			parsed[:remainder] = ''
 			unless parsed[:city] || parsed[:town] || parsed[:locality]
 				parsed[:errors].push('ERR_NOAREA')
@@ -212,23 +212,12 @@ module AddressParser
 			return parsed
 		end
 
-		def self.populate_organisation(parsed)
-			m = /^(.+,\s*)?([^,]+)$/.match(parsed[:remainder])
-			if m
-				parsed[:organisation] = m[2]
-				parsed[:remainder] = m[1] || ''
-				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+		def self.populate_lines(parsed)
+			lines = []
+			parsed[:remainder].split(',').each do |l|
+				lines.push(l.gsub(/(^\s+)|(\s+$)/, ''))
 			end
-			return parsed
-		end
-
-		def self.populate_department(parsed)
-			m = /^(.+,\s*)?([^,]+)$/.match(parsed[:remainder])
-			if m
-				parsed[:department] = m[2]
-				parsed[:remainder] = m[1] || ''
-				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
-			end
+			parsed[:lines] = lines if lines.length > 0
 			return parsed
 		end
 

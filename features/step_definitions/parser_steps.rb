@@ -8,8 +8,15 @@ end
 Then(/whose (inferred )?([^ ]+)( ([^ ]+))? is (the (float))?(.+)$/) do |inferred, property, m3, subproperty, m5, type, value|
 	test = @address
 	test = test[:inferred] if inferred
-	test = test[property.to_sym]
-	test = test[subproperty.to_sym] if subproperty
+	if subproperty == 'line' && ['first', 'second', 'third'].include?(property)
+		index = 0 if property == 'first'
+		index = 1 if property == 'second'
+		index = 2 if property == 'third'
+		test = test[:lines][index]
+	else
+		test = test[property.to_sym]
+		test = test[subproperty.to_sym] if subproperty
+	end
 	value = value.to_f if type == 'float'
 	test.should == value
 end

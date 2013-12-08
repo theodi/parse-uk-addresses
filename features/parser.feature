@@ -10,7 +10,7 @@ Feature: UK address parsing
 		 And whose street is Clifton Street
 		 And whose number is 65
 		 And whose floor is 3rd Floor
-		 And whose organisation is Open Data Institute
+		 And whose first line is Open Data Institute
 		 And whose inferred lat is the float 51.52238743450444
   	 And whose inferred long is the float -0.08364849577490492
   	 And whose inferred district name is Hackney
@@ -130,8 +130,20 @@ Feature: UK address parsing
   	 And whose county is ENFIELD
   	 And whose street is Silver Street
   	 And whose name is Civic Centre
-  	 And whose organisation is London Borough of Enfield
-  	 And whose department is Enfield Southgate
+  	 And whose second line is London Borough of Enfield
+  	 And whose first line is Enfield Southgate
+
+  Scenario: Parsing a long address with several lines before the street
+  	When I parse the address Department For Environment Food & Rural Affairs (D E F R A), State Veterinary Service, Animal Health Office, Hadrian House, Wavell Drive, Rosehill Industrial Estate, Carlisle, CA1 2TB
+  	Then I get an address whose postcode is CA1 2TB
+  	 And whose city is Carlisle
+  	 And whose estate is Rosehill Industrial Estate
+  	 And with the warning WARN_GUESSED_ESTATE
+  	 And whose street is Wavell Drive
+  	 And whose name is Hadrian House
+  	 And whose third line is Animal Health Office
+  	 And whose second line is State Veterinary Service
+  	 And whose first line is Department For Environment Food & Rural Affairs (D E F R A)
 
   	 # TODO: city Hull
   	 # TODO: city Birmingham
