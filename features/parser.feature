@@ -10,7 +10,7 @@ Feature: UK address parsing
 		 And whose street is Clifton Street
 		 And whose number is 65
 		 And whose floor is 3rd Floor
-		 And whose line1 is Open Data Institute
+		 And whose organisation is Open Data Institute
 		 And whose inferred lat is the float 51.52238743450444
   	 And whose inferred long is the float -0.08364849577490492
   	 And whose inferred district name is Hackney
@@ -123,6 +123,15 @@ Feature: UK address parsing
   	 And whose town is Sevenoaks
   	 And whose locality is Fairseat
   	 And whose name is Oakland
+
+  Scenario: Parsing an address with more than one line before the name of the address
+  	When I parse the address Enfield Southgate, London Borough of Enfield, Civic Centre, Silver Street, ENFIELD, EN1 3ZW
+  	Then I get an address whose postcode is EN1 3ZW
+  	 And whose county is ENFIELD
+  	 And whose street is Silver Street
+  	 And whose name is Civic Centre
+  	 And whose organisation is London Borough of Enfield
+  	 And whose department is Enfield Southgate
 
   	 # TODO: city Hull
   	 # TODO: city Birmingham

@@ -38,10 +38,10 @@ module AddressParser
 				populate_name(parsed)
 				populate_floor(parsed)
 				populate_flat(parsed)
-				parsed[:line1] = parsed[:remainder] if parsed[:remainder] != ''
-			else
-				parsed[:unmatched] = parsed[:remainder] if parsed[:remainder] != ''
+				populate_organisation(parsed)
+				populate_department(parsed)
 			end
+			parsed[:unmatched] = parsed[:remainder] if parsed[:remainder] != ''
 			parsed[:remainder] = ''
 			unless parsed[:city] || parsed[:town] || parsed[:locality]
 				parsed[:errors].push('ERR_NOAREA')
@@ -163,8 +163,7 @@ module AddressParser
 		end
 
 		def self.populate_dependent_street(parsed)
-			puts parsed[:remainder]
-			m = /^([^ ]+,?\s+)([^ ,]+(\s[^ ,]+)*\s(Road|Street|Hill|Avenue|Mews|Park|Parade|Square))$/.match(parsed[:remainder])
+			m = /^([^ ]+,?\s+)([^ ,]+(\s[^ ,]+)*\s(Road|Street|Hill|Avenue|Mews|Park|Parade|Square|Court))$/.match(parsed[:remainder])
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:dependent_street] = m[2]
@@ -208,6 +207,26 @@ module AddressParser
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:flat] = m[3]
+				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+			end
+			return parsed
+		end
+
+		def self.populate_organisation(parsed)
+			m = /^(.+,\s*)?([^,]+)$/.match(parsed[:remainder])
+			if m
+				parsed[:organisation] = m[2]
+				parsed[:remainder] = m[1] || ''
+				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+			end
+			return parsed
+		end
+
+		def self.populate_department(parsed)
+			m = /^(.+,\s*)?([^,]+)$/.match(parsed[:remainder])
+			if m
+				parsed[:department] = m[2]
+				parsed[:remainder] = m[1] || ''
 				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
 			end
 			return parsed
