@@ -21,12 +21,14 @@ module AddressParser
 				:address => address,
 				:remainder => address,
 				:errors => [],
+				:warnings => [],
 				:inferred => {}
 			}
 			populate_postcode(parsed)
 			populate_from_list(parsed, :county, @@counties)
 			populate_from_list(parsed, :city, @@cities)
 			populate_from_area(parsed)
+			populate_estate(parsed)
 			populate_road(parsed)
 			if parsed[:street]
 				populate_dependent_street(parsed)
@@ -35,6 +37,7 @@ module AddressParser
 				parsed[:errors].push('ERR_NOSTREET')
 			end
 			if parsed[:street] || parsed[:locality] || parsed[:town]
+				populate_estate(parsed)
 				populate_name(parsed)
 				populate_floor(parsed)
 				populate_flat(parsed)
@@ -84,7 +87,10 @@ module AddressParser
 					parsed[:remainder] = m[1]
 					parsed[:remainder].gsub!(/(,\s*|\s+)$/, '')
 					parsed[property] = m[2]
-					parsed[:unmatched] = m[3].gsub!(/^(,\s*|\s+)/, '') if m[3]
+					if m[3]
+						parsed[:unmatched] = m[3].gsub!(/^(,\s*|\s+)/, '')
+						parsed[:warnings].push('WARN_UNKNOWN_AREA')
+					end
 					break
 				end
 			end
@@ -116,6 +122,18 @@ module AddressParser
 			end
 			populate_from_list(parsed, :town, towns.keys)
 			populate_from_list(parsed, :locality, localities.keys)
+		end
+
+		def self.populate_estate(parsed)
+			m = /^(.+,\s+)?((([A-Z]?[0-9][-\.0-9a-zA-Z]*)\s+)?([^,]+\s(Business Park|Industrial Estate)))$/.match(parsed[:remainder])
+			if m
+				parsed[:remainder] = m[1] || ''
+				parsed[:number] = m[4] if m[4]
+				parsed[:estate] = m[5]
+				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+				parsed[:warnings].push('WARN_GUESSED_ESTATE')
+			end
+			return parsed
 		end
 
 		def self.populate_road(parsed)
@@ -168,6 +186,7 @@ module AddressParser
 				parsed[:remainder] = m[1] || ''
 				parsed[:dependent_street] = m[2]
 				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+				parsed[:warnings].push('WARN_GUESSED_DEPENDENT_STREET')
 			end
 			return parsed
 		end

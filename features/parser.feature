@@ -109,12 +109,21 @@ Feature: UK address parsing
   	 And whose number is 311-318
   	 And whose name is 3 Store
 
+  Scenario: Parsing an address on a business park or industrial estate
+  	When I parse the address 3 Bishops Square Business Park, Hatfield, AL10 9NA
+  	Then I get an address whose postcode is AL10 9NA
+  	 And whose town is Hatfield
+  	 And whose estate is Bishops Square Business Park
+  	 And with the warning WARN_GUESSED_ESTATE
+  	 And whose number is 3
+
   Scenario: Parsing an address with a dependent street
   	When I parse the address 6 Elm Avenue, Runcorn Road, Birmingham, B12 8QX
   	Then I get an address whose postcode is B12 8QX
   	 And whose county is Birmingham
   	 And whose street is Runcorn Road
   	 And whose dependent_street is Elm Avenue
+  	 And with the warning WARN_GUESSED_DEPENDENT_STREET
   	 And whose number is 6
 
   Scenario: Parsing an address without a street

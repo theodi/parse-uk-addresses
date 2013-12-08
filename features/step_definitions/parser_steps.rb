@@ -29,6 +29,10 @@ Then(/with the error ([^ ]+)$/) do |code|
 	@address[:errors].include?(code)
 end
 
+Then(/with the warning ([^ ]+)$/) do |code|
+	@address[:warnings].include?(code)
+end
+
 Then(/with the unmatched text (.+)$/) do |text|
 	@address[:unmatched] = text
 end
