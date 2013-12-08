@@ -154,6 +154,17 @@ Feature: UK address parsing
   	 And whose second line is State Veterinary Service
   	 And whose first line is Department For Environment Food & Rural Affairs (D E F R A)
 
+  Scenario: Parsing a long address with several lines and an industrial park
+  	When I parse the address GB Technical Services, Unit W7a, Warwick House, 18 Forge Lane, Minworth Industrial Park, Minworth, Sutton Coldfield, B76 1AH
+  	Then I get an address whose postcode is B76 1AH
+  	 And whose town is Sutton Coldfield
+  	 And whose locality is Minworth
+  	 And whose estate is Minworth Industrial Park
+  	 And whose street is Forge Lane
+  	 And whose name is Warwick House
+  	 And whose flat is Unit W7a
+  	 And whose first line is GB Technical Services
+
   	 # TODO: city Hull
   	 # TODO: city Birmingham
 

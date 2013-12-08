@@ -125,7 +125,7 @@ module AddressParser
 		end
 
 		def self.populate_estate(parsed)
-			m = /^(.+,\s+)?((([A-Z]?[0-9][-\.0-9a-zA-Z]*)\s+)?([^,]+\s(Business Park|Industrial Estate)))$/.match(parsed[:remainder])
+			m = /^(.+,\s+)?((([A-Z]?[0-9][-\.0-9a-zA-Z]*)\s+)?([^,]+\s(Business Park|Industrial Estate|Industrial Park)))$/.match(parsed[:remainder])
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:number] = m[4] if m[4]
@@ -222,7 +222,7 @@ module AddressParser
 		end
 
 		def self.populate_flat(parsed)
-			m = /^(.+(\s|,))?(Flat [^,]*)$/i.match(parsed[:remainder])
+			m = /^(.+(\s|,))?((Flat|Unit) [^,]*)$/i.match(parsed[:remainder])
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:flat] = m[3]
