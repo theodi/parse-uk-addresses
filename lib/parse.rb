@@ -31,15 +31,18 @@ module AddressParser
 			if parsed[:street]
 				populate_dependent_street(parsed)
 				populate_number(parsed)
+			else
+				parsed[:errors].push('ERR_NOSTREET')
+			end
+			if parsed[:street] || parsed[:locality] || parsed[:town]
 				populate_name(parsed)
 				populate_floor(parsed)
 				populate_flat(parsed)
 				parsed[:line1] = parsed[:remainder] if parsed[:remainder] != ''
 			else
-				parsed[:errors].push('ERR_NOSTREET')
 				parsed[:unmatched] = parsed[:remainder] if parsed[:remainder] != ''
-				parsed[:remainder] = ''
 			end
+			parsed[:remainder] = ''
 			unless parsed[:city] || parsed[:town] || parsed[:locality]
 				parsed[:errors].push('ERR_NOAREA')
 			end
@@ -71,6 +74,10 @@ module AddressParser
 		end
 
 		def self.populate_from_list(parsed, property, list)
+			# unless [:city,:county].include?(property)
+			# 	puts property.to_s
+			# 	puts list
+			# end
 			list.sort_by{|i| i.length}.reverse.each do |item|
 				m = Regexp.new("(.+#{property == :street ? '\s+' : ',\s*'})(#{item})(,\s*.+)?$", Regexp::IGNORECASE).match(parsed[:remainder])
 				if m
@@ -86,7 +93,7 @@ module AddressParser
 
 		def self.populate_from_area(parsed)
 			location = [parsed[:inferred][:lat], parsed[:inferred][:long]]
-			fuzz = parsed[:inferred][:pqi].to_f / 300
+			fuzz = parsed[:inferred][:pqi].to_f / 60
 			startkey = [location[0] - fuzz, location[1] - fuzz]
 			endkey = [location[0] + fuzz, location[1] + fuzz]
 			inlat = @@features_db.view('localities_by_location/all', {:startkey => startkey, :endkey => endkey})

@@ -117,6 +117,16 @@ Feature: UK address parsing
   	 And whose dependent_street is Elm Avenue
   	 And whose number is 6
 
+  Scenario: Parsing an address without a street
+  	When I parse the address Oakland, Fairseat, Sevenoaks TN15 7LT
+  	Then I get an address whose postcode is TN15 7LT
+  	 And whose town is Sevenoaks
+  	 And whose locality is Fairseat
+  	 And whose name is Oakland
+
+  	 # TODO: city Hull
+  	 # TODO: city Birmingham
+
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire
 	# 	North East Lincolnshire ends with Lincolnshire
