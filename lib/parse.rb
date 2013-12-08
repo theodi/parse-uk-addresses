@@ -29,6 +29,7 @@ module AddressParser
 			populate_from_area(parsed)
 			populate_road(parsed)
 			if parsed[:street]
+				populate_dependent_street(parsed)
 				populate_number(parsed)
 				populate_name(parsed)
 				populate_floor(parsed)
@@ -152,6 +153,17 @@ module AddressParser
 				roads[road['doc']['Name']] = road['doc'] if road['doc']['Name']
 			end
 			return roads
+		end
+
+		def self.populate_dependent_street(parsed)
+			puts parsed[:remainder]
+			m = /^([^ ]+,?\s+)([^ ,]+(\s[^ ,]+)*\s(Road|Street|Hill|Avenue|Mews|Park|Parade|Square))$/.match(parsed[:remainder])
+			if m
+				parsed[:remainder] = m[1] || ''
+				parsed[:dependent_street] = m[2]
+				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+			end
+			return parsed
 		end
 
 		def self.populate_number(parsed)

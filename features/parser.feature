@@ -109,6 +109,14 @@ Feature: UK address parsing
   	 And whose number is 311-318
   	 And whose name is 3 Store
 
+  Scenario: Parsing an address with a dependent street
+  	When I parse the address 6 Elm Avenue, Runcorn Road, Birmingham, B12 8QX
+  	Then I get an address whose postcode is B12 8QX
+  	 And whose county is Birmingham
+  	 And whose street is Runcorn Road
+  	 And whose dependent_street is Elm Avenue
+  	 And whose number is 6
+
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire
 	# 	North East Lincolnshire ends with Lincolnshire
