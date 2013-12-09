@@ -299,17 +299,11 @@ module Upload
 					# clean up the postcode
 					postcode = row['Postcode']
 					postcode.insert(4, ' ') unless postcode.include?(' ')
-					postcode.gsub(/\s+/, ' ')
+					postcode.gsub!(/\s+/, ' ')
 					doc['_id'] = postcode
 					doc['Eastings'] = row['Eastings'].to_i
 					doc['Northings'] = row['Northings'].to_i
 				  doc['Location'] = Breasal::EastingNorthing.new(easting: doc['Eastings'], northing: doc['Northings'], type: :gb).to_wgs84
-				  doc['Country']  = { code: row['Country_code'],        name: ons[row['Country_code']] }
-				  doc['County']   = { code: row['Admin_county_code'],   name: ons[row['Admin_county_code']] } unless row['Admin_county_code'] == ''
-				  doc['District'] = { code: row['Admin_district_code'], name: ons[row['Admin_district_code']] }
-				  doc['Ward']     = { code: row['Admin_ward_code'],     name: ons[row['Admin_ward_code']] }
-				  doc['NHS_regional_HA'] = { code: row['NHS_regional_HA_code'], name: ons[row['NHS_regional_HA_code']] } unless row['NHS_regional_HA_code'] == ''
-				  doc['NHS_HA']   = { code: row['NHS_HA_code'],         name: ons[row['NHS_HA_code']] } unless row['NHS_HA_code'] == ''
 					docs.push(doc)
 				end
 				if codepoint_db.all_docs({key: docs[0]['_id']})['rows'].empty?
