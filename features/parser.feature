@@ -47,7 +47,8 @@ Feature: UK address parsing
   Scenario: Parsing an address where the street is in an old (1990) Ward
   	When I parse the address 1A Egmont Road, Middlesbrough, TS4 2HT
   	Then I get an address whose postcode is TS4 2HT
-  	 And whose county is Middlesbrough
+  	 And has no county
+  	 And whose town is Middlesbrough
   	 And whose street is Egmont Road
   	 And whose number is 1A
 
@@ -120,7 +121,8 @@ Feature: UK address parsing
   Scenario: Parsing an address with a dependent street
   	When I parse the address 6 Elm Avenue, Runcorn Road, Birmingham, B12 8QX
   	Then I get an address whose postcode is B12 8QX
-  	 And whose county is Birmingham
+  	 And has no county
+  	 And whose city is Birmingham
   	 And whose street is Runcorn Road
   	 And whose dependent_street is Elm Avenue
   	 And with the warning WARN_GUESSED_DEPENDENT_STREET
@@ -136,7 +138,8 @@ Feature: UK address parsing
   Scenario: Parsing an address with more than one line before the name of the address
   	When I parse the address Enfield Southgate, London Borough of Enfield, Civic Centre, Silver Street, ENFIELD, EN1 3ZW
   	Then I get an address whose postcode is EN1 3ZW
-  	 And whose county is ENFIELD
+  	 And has no county
+  	 And whose town is ENFIELD
   	 And whose street is Silver Street
   	 And whose name is Civic Centre
   	 And whose second line is London Borough of Enfield
@@ -205,7 +208,8 @@ Feature: UK address parsing
   Scenario: Parsing an address near a road
   	When I parse the address The National Museum of Computing, Bletchley Park, Sherwood Drive, Bletchley, Milton Keynes, MK3 6EB
   	Then I get an address whose postcode is MK3 6EB
-  	 And whose county is Milton Keynes
+  	 And has no county
+  	 And whose town is Milton Keynes
   	 And whose locality is Bletchley
   	 And whose street is Sherwood Drive
   	 And whose name is Bletchley Park
@@ -222,7 +226,6 @@ Feature: UK address parsing
 	# 	 And whose first line is Open Data Institute
 
   	 # TODO: city Hull
-  	 # TODO: city Birmingham
 
 	# Scenario: An address in a county which is a substring of another county
 	# 	South Gloucestershire ends with Gloucestershire

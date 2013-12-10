@@ -97,23 +97,30 @@ module AddressParser
 			# 	puts property.to_s
 			# 	puts list
 			# end
-			list.sort_by{|i| i.length}.reverse.each do |item|
-				m = Regexp.new("(.+#{property == :street ? '\s+' : ',\s*'})(#{item})(,\s*.+)?$", Regexp::IGNORECASE).match(parsed[:remainder])
-				if m
-					parsed[:remainder] = m[1]
-					parsed[:remainder].gsub!(/(,\s*|\s+)$/, '')
-					parsed[property] = m[2]
-					if property == :city && !parsed[:inferred][:lat]
-						city = @@cities[item]
-						parsed[:inferred][:lat] = city['Location']['latitude']
-						parsed[:inferred][:long] = city['Location']['longitude']
-						parsed[:inferred][:county] = { :full_name => city['FULL_COUNTY'] }
+			if parsed[:county] && 
+				 [:city,:town].include?(property) && 
+				 list.map { |i| i.upcase }.include?(parsed[:county].upcase)
+				parsed[property] = parsed[:county]
+				parsed.delete(:county)
+			else
+				list.sort_by{|i| i.length}.reverse.each do |item|
+					m = Regexp.new("(.+#{property == :street ? '\s+' : ',\s*'})(#{item})(,\s*.+)?$", Regexp::IGNORECASE).match(parsed[:remainder])
+					if m
+						parsed[:remainder] = m[1]
+						parsed[:remainder].gsub!(/(,\s*|\s+)$/, '')
+						parsed[property] = m[2]
+						if property == :city && !parsed[:inferred][:lat]
+							city = @@cities[item]
+							parsed[:inferred][:lat] = city['Location']['latitude']
+							parsed[:inferred][:long] = city['Location']['longitude']
+							parsed[:inferred][:county] = { :full_name => city['FULL_COUNTY'] }
+						end
+						if m[3]
+							parsed[:unmatched] = m[3].gsub!(/^(,\s*|\s+)/, '')
+							parsed[:warnings].push('WARN_UNKNOWN_AREA')
+						end
+						break
 					end
-					if m[3]
-						parsed[:unmatched] = m[3].gsub!(/^(,\s*|\s+)/, '')
-						parsed[:warnings].push('WARN_UNKNOWN_AREA')
-					end
-					break
 				end
 			end
 			return parsed
