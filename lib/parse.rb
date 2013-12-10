@@ -20,6 +20,7 @@ module AddressParser
 		end
 
 		def self.parse(address)
+			address.gsub!(/’/,"'")
 			parsed = {
 				:address => address,
 				:remainder => address,
@@ -52,7 +53,7 @@ module AddressParser
 			unless parsed[:city] || parsed[:town] || parsed[:locality]
 				parsed[:errors].push('ERR_NO_AREA')
 			end
-			puts parsed.to_yaml
+			# puts parsed.to_yaml
 			return parsed
 		end
 

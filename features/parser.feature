@@ -181,15 +181,22 @@ Feature: UK address parsing
   	 And whose number is 10
   	 And whose name is St. Judes & St. Pauls C of E (Va) Primary School
 
-	Scenario: Parsing an address whose postcode is invalid
-		When I parse the address Open Data Institute, 3rd Floor, 65 Clifton Street, London EC2A 4JZ
-		Then I get an address whose postcode is EC2A 4JZ
-		 And with the error ERR_BAD_POSTCODE
-		 And whose city is London
-		 And whose street is Clifton Street
-		 And whose number is 65
-		 And whose floor is 3rd Floor
-		 And whose first line is Open Data Institute
+  Scenario: Parsing an address with a curly apostrophe in it
+  	When I parse the address 1 Acre View, Bo’ness, EH51 9RQ
+  	Then I get an address whose postcode is EH51 9RQ
+  	 And whose town is Bo'ness
+  	 And whose street is Acre View
+  	 And whose number is 1
+
+	# Scenario: Parsing an address whose postcode is invalid
+	# 	When I parse the address Open Data Institute, 3rd Floor, 65 Clifton Street, London EC2A 4JZ
+	# 	Then I get an address whose postcode is EC2A 4JZ
+	# 	 And with the error ERR_BAD_POSTCODE
+	# 	 And whose city is London
+	# 	 And whose street is Clifton Street
+	# 	 And whose number is 65
+	# 	 And whose floor is 3rd Floor
+	# 	 And whose first line is Open Data Institute
 
   	 # TODO: city Hull
   	 # TODO: city Birmingham
