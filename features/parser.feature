@@ -188,6 +188,14 @@ Feature: UK address parsing
   	 And whose street is Acre View
   	 And whose number is 1
 
+  Scenario: Parsing an address where the first line contains commas
+  	When I parse the address Kirkland, Lane, Mathias & Perry, North Muskham Prebend Church Street, Southwell, NG25 0HQ
+  	Then I get an address whose postcode is NG25 0HQ
+  	 And whose town is Southwell
+  	 And whose street is Church Street
+  	 And whose name is North Muskham Prebend
+  	 And whose first line is Kirkland, Lane, Mathias & Perry
+
 	# Scenario: Parsing an address whose postcode is invalid
 	# 	When I parse the address Open Data Institute, 3rd Floor, 65 Clifton Street, London EC2A 4JZ
 	# 	Then I get an address whose postcode is EC2A 4JZ

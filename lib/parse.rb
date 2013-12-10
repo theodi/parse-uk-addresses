@@ -264,11 +264,18 @@ module AddressParser
 		end
 
 		def self.populate_lines(parsed)
-			lines = []
-			parsed[:remainder].split(',').each do |l|
-				lines.push(l.gsub(/(^\s+)|(\s+$)/, ''))
+			m = /^(.+\s(&|and)\s[^,]+)(.*)$/.match(parsed[:remainder])
+			if m
+				parsed[:lines] = [] unless parsed[:lines]
+				parsed[:lines].push(m[1])
+				parsed[:remainder] = m[3].gsub(/^,\s*/, '') || ''
+				populate_lines(parsed) unless parsed[:remainder] == ''
+			elsif parsed[:remainder] != ''
+				parsed[:lines] = [] unless parsed[:lines]
+				parsed[:remainder].split(',').each do |l|
+					parsed[:lines].push(l.gsub(/(^\s+)|(\s+$)/, ''))
+				end
 			end
-			parsed[:lines] = lines if lines.length > 0
 			return parsed
 		end
 
