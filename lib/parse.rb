@@ -161,8 +161,8 @@ module AddressParser
 
 		def self.populate_road(parsed)
 			location = [parsed[:inferred][:lat], parsed[:inferred][:long]]
-			latfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 5000 : 0.2
-			longfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 2500 : 0.4
+			latfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 4000 : 0.2
+			longfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 2000 : 0.4
 			startkey = ['', location[0] - latfuzz, location[1] - latfuzz]
 			endkey = ['', location[0] + longfuzz, location[1] + longfuzz]
 			if parsed[:inferred][:ward]

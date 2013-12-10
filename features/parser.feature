@@ -202,6 +202,15 @@ Feature: UK address parsing
   	 And whose name is BFPO
   	 And whose number is 281
 
+  Scenario: Parsing an address near a road
+  	When I parse the address The National Museum of Computing, Bletchley Park, Sherwood Drive, Bletchley, Milton Keynes, MK3 6EB
+  	Then I get an address whose postcode is MK3 6EB
+  	 And whose county is Milton Keynes
+  	 And whose locality is Bletchley
+  	 And whose street is Sherwood Drive
+  	 And whose name is Bletchley Park
+  	 And whose first line is The National Museum of Computing
+
 	# Scenario: Parsing an address whose postcode is invalid
 	# 	When I parse the address Open Data Institute, 3rd Floor, 65 Clifton Street, London EC2A 4JZ
 	# 	Then I get an address whose postcode is EC2A 4JZ
