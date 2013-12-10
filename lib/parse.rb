@@ -34,7 +34,7 @@ module AddressParser
 				populate_dependent_street(parsed)
 				populate_number(parsed)
 			else
-				parsed[:errors].push('ERR_NOSTREET')
+				parsed[:errors].push('ERR_NO_STREET')
 			end
 			if parsed[:street] || parsed[:locality] || parsed[:town]
 				populate_estate(parsed)
@@ -47,7 +47,7 @@ module AddressParser
 			end
 			parsed[:remainder] = ''
 			unless parsed[:city] || parsed[:town] || parsed[:locality]
-				parsed[:errors].push('ERR_NOAREA')
+				parsed[:errors].push('ERR_NO_AREA')
 			end
 			# puts parsed.to_yaml
 			return parsed
@@ -203,10 +203,15 @@ module AddressParser
 
 		def self.populate_name(parsed)
 			m = /^(.+,\s*)?([^,]+)$/.match(parsed[:remainder])
-			if m && !(/\b(floor|flat)\b/i =~ m[2])
-				parsed[:remainder] = m[1] || ''
-				parsed[:name] = m[2]
-				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+			if m && !(/\b(floor|flat|unit)\b/i =~ m[2])
+				if m[2] =~ /\s(&|and)\s/
+					parsed[:name] = parsed[:remainder]
+					parsed[:remainder] = ''
+				else
+					parsed[:remainder] = m[1] || ''
+					parsed[:name] = m[2]
+					parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+				end
 			end
 			return parsed
 		end

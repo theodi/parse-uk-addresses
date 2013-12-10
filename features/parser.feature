@@ -72,8 +72,8 @@ Feature: UK address parsing
   	 And has no street
   	 And has no number
   	 And has no name
-  	 And with the error ERR_NOAREA
-  	 And with the error ERR_NOSTREET
+  	 And with the error ERR_NO_AREA
+  	 And with the error ERR_NO_STREET
   	 And with the unmatched text Idas Court, 4-6 Princes Road, Hull
 
   Scenario: Parsing an address with a name and a number
@@ -164,6 +164,22 @@ Feature: UK address parsing
   	 And whose name is Warwick House
   	 And whose flat is Unit W7a
   	 And whose first line is GB Technical Services
+
+  Scenario: Parsing an address where the name of the building contains commas
+  	When I parse the address Society of College, National & University Libraries, 102 Euston Street, London, NW1 2HA
+  	Then I get an address whose postcode is NW1 2HA
+  	 And whose city is London
+  	 And whose street is Euston Street
+  	 And whose number is 102
+  	 And whose name is Society of College, National & University Libraries
+
+  Scenario: Parsing an address whose postcode isn't in CodePoint Open
+  	When I parse the address St. Judes & St. Pauls C of E (Va) Primary School, 10 Kingsbury Road, London, N1 4AZ
+  	Then I get an address whose postcode is N1 4AZ
+  	 And whose city is London
+  	 And whose street is Kingsbury Road
+  	 And whose number is 10
+  	 And whose name is St. Judes & St. Pauls C of E (Va) Primary School
 
   	 # TODO: city Hull
   	 # TODO: city Birmingham

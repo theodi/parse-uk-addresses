@@ -26,13 +26,13 @@ Then(/has no ([^ ]+)$/) do |property|
 end
 
 Then(/with the error ([^ ]+)$/) do |code|
-	@address[:errors].include?(code)
+	@address[:errors].should include code
 end
 
 Then(/with the warning ([^ ]+)$/) do |code|
-	@address[:warnings].include?(code)
+	@address[:warnings].should include code
 end
 
 Then(/with the unmatched text (.+)$/) do |text|
-	@address[:unmatched] = text
+	@address[:unmatched].should == text
 end
