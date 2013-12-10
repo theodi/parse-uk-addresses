@@ -114,7 +114,7 @@ module AddressParser
 		def self.populate_from_area(parsed)
 			location = [parsed[:inferred][:lat], parsed[:inferred][:long]]
 			latfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 60 : 0.2
-			longfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 30 : 0.4
+			longfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 60 : 0.4
 			startkey = [location[0] - latfuzz, location[1] - latfuzz]
 			endkey = [location[0] + longfuzz, location[1] + longfuzz]
 			inlat = @@features_db.view('localities_by_location/all', {:startkey => startkey, :endkey => endkey})

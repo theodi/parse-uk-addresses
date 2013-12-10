@@ -191,7 +191,6 @@ Feature: UK address parsing
 		 And whose floor is 3rd Floor
 		 And whose first line is Open Data Institute
 
-  	 # TODO: missing postcode
   	 # TODO: city Hull
   	 # TODO: city Birmingham
 
