@@ -14,7 +14,10 @@ module AddressParser
 		@@ons_db = CouchRest.database!(ENV['ONS_DB'])
 
 		@@counties = @@features_db.view('counties/all', { :group => true })['rows'].map { |r| r['key'] }
-		@@cities = @@features_db.view('cities/all')['rows'].map { |r| r['key'] }
+		@@cities = {}
+		@@features_db.view('cities/all', { :include_docs => true })['rows'].each do |r|
+			@@cities[r['key']] = r['doc']
+		end
 
 		def self.parse(address)
 			parsed = {
@@ -26,7 +29,7 @@ module AddressParser
 			}
 			populate_postcode(parsed)
 			populate_from_list(parsed, :county, @@counties)
-			populate_from_list(parsed, :city, @@cities)
+			populate_from_list(parsed, :city, @@cities.keys)
 			populate_from_area(parsed)
 			populate_estate(parsed)
 			populate_road(parsed)
@@ -49,7 +52,7 @@ module AddressParser
 			unless parsed[:city] || parsed[:town] || parsed[:locality]
 				parsed[:errors].push('ERR_NO_AREA')
 			end
-			# puts parsed.to_yaml
+			puts parsed.to_yaml
 			return parsed
 		end
 
@@ -64,15 +67,20 @@ module AddressParser
 					parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
 				end
 			end
-			codepoint = @@codepoint_db.get(parsed[:postcode])
-			parsed[:inferred][:lat] = codepoint['Location']['latitude']
-			parsed[:inferred][:long] = codepoint['Location']['longitude']
-			parsed[:inferred][:pqi] = codepoint['Positional_quality_indicator'].to_i
-			parsed[:inferred][:county] = hash(@@ons_db.get(codepoint['Admin_county_code'])) unless codepoint['Admin_county_code'] == ''
-			parsed[:inferred][:district] = hash(@@ons_db.get(codepoint['Admin_district_code']))
-			parsed[:inferred][:ward] = hash(@@ons_db.get(codepoint['Admin_ward_code']))
-			parsed[:inferred][:regional_health_authority] = hash(@@ons_db.get(codepoint['NHS_regional_HA_code'])) unless codepoint['NHS_regional_HA_code'] == ''
-			parsed[:inferred][:health_authority] = hash(@@ons_db.get(codepoint['NHS_HA_code'])) unless codepoint['NHS_HA_code'] == ''
+			begin
+				codepoint = @@codepoint_db.get(parsed[:postcode])
+				parsed[:inferred][:lat] = codepoint['Location']['latitude']
+				parsed[:inferred][:long] = codepoint['Location']['longitude']
+				parsed[:inferred][:pqi] = codepoint['Positional_quality_indicator'].to_i
+				parsed[:inferred][:county] = hash(@@ons_db.get(codepoint['Admin_county_code'])) unless codepoint['Admin_county_code'] == ''
+				parsed[:inferred][:district] = hash(@@ons_db.get(codepoint['Admin_district_code']))
+				parsed[:inferred][:ward] = hash(@@ons_db.get(codepoint['Admin_ward_code']))
+				parsed[:inferred][:regional_health_authority] = hash(@@ons_db.get(codepoint['NHS_regional_HA_code'])) unless codepoint['NHS_regional_HA_code'] == ''
+				parsed[:inferred][:health_authority] = hash(@@ons_db.get(codepoint['NHS_HA_code'])) unless codepoint['NHS_HA_code'] == ''
+			rescue RestClient::ResourceNotFound
+				# no such postcode
+				parsed[:errors].push('ERR_BAD_POSTCODE')
+			end
 			return parsed
 		end
 
@@ -87,6 +95,12 @@ module AddressParser
 					parsed[:remainder] = m[1]
 					parsed[:remainder].gsub!(/(,\s*|\s+)$/, '')
 					parsed[property] = m[2]
+					if property == :city && !parsed[:inferred][:lat]
+						city = @@cities[item]
+						parsed[:inferred][:lat] = city['Location']['latitude']
+						parsed[:inferred][:long] = city['Location']['longitude']
+						parsed[:inferred][:county] = { :full_name => city['FULL_COUNTY'] }
+					end
 					if m[3]
 						parsed[:unmatched] = m[3].gsub!(/^(,\s*|\s+)/, '')
 						parsed[:warnings].push('WARN_UNKNOWN_AREA')
@@ -99,9 +113,10 @@ module AddressParser
 
 		def self.populate_from_area(parsed)
 			location = [parsed[:inferred][:lat], parsed[:inferred][:long]]
-			fuzz = parsed[:inferred][:pqi].to_f / 60
-			startkey = [location[0] - fuzz, location[1] - fuzz]
-			endkey = [location[0] + fuzz, location[1] + fuzz]
+			latfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 60 : 0.2
+			longfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 30 : 0.4
+			startkey = [location[0] - latfuzz, location[1] - latfuzz]
+			endkey = [location[0] + longfuzz, location[1] + longfuzz]
 			inlat = @@features_db.view('localities_by_location/all', {:startkey => startkey, :endkey => endkey})
 			inlatlong = []
 			inlat['rows'].each do |f|
@@ -138,26 +153,37 @@ module AddressParser
 
 		def self.populate_road(parsed)
 			location = [parsed[:inferred][:lat], parsed[:inferred][:long]]
-			fuzz = parsed[:inferred][:pqi].to_f / 2500
-			startkey = [parsed[:inferred][:ward][:name], location[0] - fuzz, location[1] - fuzz]
-			endkey = [parsed[:inferred][:ward][:name], location[0] + fuzz, location[1] + fuzz]
-			roads = get_roads('roads_by_location/all', startkey, endkey)
-			populate_from_list(parsed, :street, roads.keys)
-			unless parsed[:street]
-				district = parsed[:inferred][:district][:full_name]
-				district = district.gsub(' - ', ' / ')
-				startkey[0] = district
-				endkey[0] = district
-				roads = get_roads('roads_by_location_in_district/all', startkey, endkey)
+			latfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 5000 : 0.2
+			longfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 2500 : 0.4
+			startkey = ['', location[0] - latfuzz, location[1] - latfuzz]
+			endkey = ['', location[0] + longfuzz, location[1] + longfuzz]
+			if parsed[:inferred][:ward]
+				startkey[0] = parsed[:inferred][:ward][:name]
+				endkey[0] = parsed[:inferred][:ward][:name]
+				roads = get_roads('roads_by_location_in_locality/all', startkey, endkey)
 				populate_from_list(parsed, :street, roads.keys)
-				if !parsed[:street] && (parsed[:inferred][:county] || parsed[:county])
-					county = parsed[:inferred][:county] ? parsed[:inferred][:county][:full_name] : parsed[:county]
-					county = county.gsub(' - ', ' / ')
-					startkey[0] = county
-					endkey[0] = county
-					roads = get_roads('roads_by_location_in_county/all', startkey, endkey)
+				unless parsed[:street]
+					district = parsed[:inferred][:district][:full_name]
+					district = district.gsub(' - ', ' / ')
+					startkey[0] = district
+					endkey[0] = district
+					roads = get_roads('roads_by_location_in_district/all', startkey, endkey)
 					populate_from_list(parsed, :street, roads.keys)
 				end
+			end
+			if !parsed[:street] && (parsed[:inferred][:county] || parsed[:county])
+				county = parsed[:inferred][:county] ? parsed[:inferred][:county][:full_name] : parsed[:county]
+				county = county.gsub(' - ', ' / ')
+				startkey[0] = county
+				endkey[0] = county
+				roads = get_roads('roads_by_location_in_county/all', startkey, endkey)
+				populate_from_list(parsed, :street, roads.keys)
+			end
+			unless parsed[:street]
+				startkey[0] = nil
+				endkey[0] = nil
+				roads = get_roads('roads_by_location/all', startkey, endkey)
+				populate_from_list(parsed, :street, roads.keys)
 			end
 			if parsed[:street]
 				road = roads[parsed[:street].upcase]

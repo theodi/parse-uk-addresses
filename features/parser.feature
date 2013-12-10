@@ -173,7 +173,7 @@ Feature: UK address parsing
   	 And whose number is 102
   	 And whose name is Society of College, National & University Libraries
 
-  Scenario: Parsing an address whose postcode isn't in CodePoint Open
+  Scenario: Parsing an address where the name contains lots of odd characters
   	When I parse the address St. Judes & St. Pauls C of E (Va) Primary School, 10 Kingsbury Road, London, N1 4AZ
   	Then I get an address whose postcode is N1 4AZ
   	 And whose city is London
@@ -181,6 +181,17 @@ Feature: UK address parsing
   	 And whose number is 10
   	 And whose name is St. Judes & St. Pauls C of E (Va) Primary School
 
+	Scenario: Parsing an address whose postcode is invalid
+		When I parse the address Open Data Institute, 3rd Floor, 65 Clifton Street, London EC2A 4JZ
+		Then I get an address whose postcode is EC2A 4JZ
+		 And with the error ERR_BAD_POSTCODE
+		 And whose city is London
+		 And whose street is Clifton Street
+		 And whose number is 65
+		 And whose floor is 3rd Floor
+		 And whose first line is Open Data Institute
+
+  	 # TODO: missing postcode
   	 # TODO: city Hull
   	 # TODO: city Birmingham
 

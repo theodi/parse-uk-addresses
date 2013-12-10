@@ -61,6 +61,13 @@ module Upload
 				"_id" => "_design/roads_by_location",
 				:views => {
 					:all => {
+						:map => "function(doc){emit([null,doc.Centre.latitude,doc.Centre.longitude],doc._id)}"
+					}
+				}
+			}, {
+				"_id" => "_design/roads_by_location_in_locality",
+				:views => {
+					:all => {
 						:map => "function(doc){emit([doc.Locality,doc.Centre.latitude,doc.Centre.longitude],doc._id)}"
 					}
 				}
