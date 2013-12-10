@@ -196,6 +196,12 @@ Feature: UK address parsing
   	 And whose name is North Muskham Prebend
   	 And whose first line is Kirkland, Lane, Mathias & Perry
 
+  Scenario: Parsing a British Forces address
+  	When I parse the address BFPO 281, BFPO, BF1 4FB
+  	Then I get an address whose postcode is BF1 4FB
+  	 And whose name is BFPO
+  	 And whose number is 281
+
 	# Scenario: Parsing an address whose postcode is invalid
 	# 	When I parse the address Open Data Institute, 3rd Floor, 65 Clifton Street, London EC2A 4JZ
 	# 	Then I get an address whose postcode is EC2A 4JZ

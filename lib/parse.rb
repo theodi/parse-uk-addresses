@@ -12,7 +12,6 @@ module AddressParser
 		@@features_db = CouchRest.database!(ENV['FEATURES_DB'])
 		@@roads_db = CouchRest.database!(ENV['ROADS_DB'])
 		@@ons_db = CouchRest.database!(ENV['ONS_DB'])
-
 		@@counties = @@features_db.view('counties/all', { :group => true })['rows'].map { |r| r['key'] }
 		@@cities = {}
 		@@features_db.view('cities/all', { :include_docs => true })['rows'].each do |r|
@@ -29,30 +28,32 @@ module AddressParser
 				:inferred => {}
 			}
 			populate_postcode(parsed)
-			populate_from_list(parsed, :county, @@counties)
-			populate_from_list(parsed, :city, @@cities.keys)
-			populate_from_area(parsed)
-			populate_estate(parsed)
-			populate_road(parsed)
-			if parsed[:street]
-				populate_dependent_street(parsed)
-				populate_number(parsed)
-			else
-				parsed[:errors].push('ERR_NO_STREET')
-			end
-			if parsed[:street] || parsed[:locality] || parsed[:town]
+			unless parsed[:postcode] =~ /^BF/
+				populate_from_list(parsed, :county, @@counties)
+				populate_from_list(parsed, :city, @@cities.keys)
+				populate_from_area(parsed)
 				populate_estate(parsed)
-				populate_name(parsed)
-				populate_floor(parsed)
-				populate_flat(parsed)
-				populate_lines(parsed)
-			else
-				parsed[:unmatched] = parsed[:remainder] if parsed[:remainder] != ''
+				populate_road(parsed)
+				if parsed[:street]
+					populate_dependent_street(parsed)
+					populate_number(parsed)
+				else
+					parsed[:errors].push('ERR_NO_STREET')
+				end
+				if parsed[:street] || parsed[:locality] || parsed[:town]
+					populate_estate(parsed)
+					populate_name(parsed)
+					populate_floor(parsed)
+					populate_flat(parsed)
+					populate_lines(parsed)
+				else
+					parsed[:unmatched] = parsed[:remainder] if parsed[:remainder] != ''
+				end
+				unless parsed[:city] || parsed[:town] || parsed[:locality]
+					parsed[:errors].push('ERR_NO_AREA')
+				end
 			end
 			parsed[:remainder] = ''
-			unless parsed[:city] || parsed[:town] || parsed[:locality]
-				parsed[:errors].push('ERR_NO_AREA')
-			end
 			# puts parsed.to_yaml
 			return parsed
 		end
@@ -68,19 +69,25 @@ module AddressParser
 					parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
 				end
 			end
-			begin
-				codepoint = @@codepoint_db.get(parsed[:postcode])
-				parsed[:inferred][:lat] = codepoint['Location']['latitude']
-				parsed[:inferred][:long] = codepoint['Location']['longitude']
-				parsed[:inferred][:pqi] = codepoint['Positional_quality_indicator'].to_i
-				parsed[:inferred][:county] = hash(@@ons_db.get(codepoint['Admin_county_code'])) unless codepoint['Admin_county_code'] == ''
-				parsed[:inferred][:district] = hash(@@ons_db.get(codepoint['Admin_district_code']))
-				parsed[:inferred][:ward] = hash(@@ons_db.get(codepoint['Admin_ward_code']))
-				parsed[:inferred][:regional_health_authority] = hash(@@ons_db.get(codepoint['NHS_regional_HA_code'])) unless codepoint['NHS_regional_HA_code'] == ''
-				parsed[:inferred][:health_authority] = hash(@@ons_db.get(codepoint['NHS_HA_code'])) unless codepoint['NHS_HA_code'] == ''
-			rescue RestClient::ResourceNotFound
-				# no such postcode
-				parsed[:errors].push('ERR_BAD_POSTCODE')
+			if parsed[:postcode] =~ /^BF/
+				parsed[:name] = 'BFPO'
+				m = /BFPO ([0-9]+)/.match(parsed[:address])
+				parsed[:number] = m[1] if m
+			else
+				begin
+					codepoint = @@codepoint_db.get(parsed[:postcode])
+					parsed[:inferred][:lat] = codepoint['Location']['latitude']
+					parsed[:inferred][:long] = codepoint['Location']['longitude']
+					parsed[:inferred][:pqi] = codepoint['Positional_quality_indicator'].to_i
+					parsed[:inferred][:county] = hash(@@ons_db.get(codepoint['Admin_county_code'])) unless codepoint['Admin_county_code'] == ''
+					parsed[:inferred][:district] = hash(@@ons_db.get(codepoint['Admin_district_code']))
+					parsed[:inferred][:ward] = hash(@@ons_db.get(codepoint['Admin_ward_code']))
+					parsed[:inferred][:regional_health_authority] = hash(@@ons_db.get(codepoint['NHS_regional_HA_code'])) unless codepoint['NHS_regional_HA_code'] == ''
+					parsed[:inferred][:health_authority] = hash(@@ons_db.get(codepoint['NHS_HA_code'])) unless codepoint['NHS_HA_code'] == ''
+				rescue RestClient::ResourceNotFound
+					# no such postcode
+					parsed[:errors].push('ERR_BAD_POSTCODE')
+				end
 			end
 			return parsed
 		end
