@@ -214,22 +214,24 @@ Feature: UK address parsing
   	 And whose name is Bletchley Park
   	 And whose first line is The National Museum of Computing
 
-	# Scenario: Parsing an address whose postcode is invalid
-	# 	When I parse the address Open Data Institute, 3rd Floor, 65 Clifton Street, London EC2A 4JZ
-	# 	Then I get an address whose postcode is EC2A 4JZ
-	# 	 And with the error ERR_BAD_POSTCODE
-	# 	 And whose city is London
-	# 	 And whose street is Clifton Street
-	# 	 And whose number is 65
-	# 	 And whose floor is 3rd Floor
-	# 	 And whose first line is Open Data Institute
+	Scenario: Parsing an address whose postcode is invalid
+		When I parse the address Open Data Institute, 3rd Floor, 65 Clifton Street, London EC2A 4JZ
+		Then I get an address whose postcode is EC2A 4JZ
+		 And with the error ERR_BAD_POSTCODE
+		 And whose city is London
+		 And whose street is Clifton Street
+		 And whose number is 65
+		 And whose floor is 3rd Floor
+		 And whose first line is Open Data Institute
 
-  	 # TODO: city Hull
+# Tests based on addresses from Redbridge
 
-	# Scenario: An address in a county which is a substring of another county
-	# 	South Gloucestershire ends with Gloucestershire
-	# 	North East Lincolnshire ends with Lincolnshire
-	# 	North Lincolnshire ends with Lincolnshire
-	# 	East Renfrewshire ends with Renfrewshire
-	# 	Bath and North East Somerset ends with Somerset
-	# 	North Somerset ends with Somerset
+	Scenario: Parsing an address with no comma separating localities
+		When I parse the address 8, Frank Slater House, Green Lane, Goodmayes Ilford, Essex IG3 9RS
+		Then I get an address whose postcode is IG3 9RS
+		 And whose county is Essex
+		 And whose town is Ilford
+		 And whose locality is Goodmayes
+		 And whose street is Green Lane
+		 And whose name is Frank Slater House
+		 And whose flat is 8

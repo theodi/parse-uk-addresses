@@ -34,19 +34,33 @@ module AddressParser
 			}
 			populate_postcode(parsed)
 			unless parsed[:postcode] =~ /^BF/
-				populate_from_list(parsed, :county, @@counties)
-				populate_from_list(parsed, :city, @@cities.keys)
-				populate_from_area(parsed)
-				populate_estate(parsed)
-				populate_road(parsed)
-				if parsed[:street]
-					populate_dependent_street(parsed)
-					populate_number(parsed)
+				if parsed[:inferred][:lat]
+					populate_road(parsed)
+					if parsed[:street]
+						populate_dependent_street(parsed)
+						populate_number(parsed)
+					else
+						parsed[:errors].push('ERR_NO_STREET')
+					end
+					populate_from_list(parsed, :county, @@counties)
+					populate_from_list(parsed, :city, @@cities.keys)
+					populate_from_area(parsed)
+					populate_estate(parsed, :unmatched)
 				else
-					parsed[:errors].push('ERR_NO_STREET')
+					populate_from_list(parsed, :county, @@counties)
+					populate_from_list(parsed, :city, @@cities.keys)
+					populate_from_area(parsed)
+					populate_estate(parsed, :unmatched)
+					populate_road(parsed)
+					if parsed[:street]
+						populate_dependent_street(parsed)
+						populate_number(parsed)
+					else
+						parsed[:errors].push('ERR_NO_STREET')
+					end
 				end
 				if parsed[:street] || parsed[:locality] || parsed[:town]
-					populate_estate(parsed)
+					populate_estate(parsed, :remainder)
 					populate_name(parsed)
 					populate_floor(parsed)
 					populate_flat(parsed)
@@ -99,7 +113,7 @@ module AddressParser
 
 		def self.populate_from_list(parsed, property, list)
 			# unless [:city,:county].include?(property)
-			# 	puts property.to_s
+			# 	puts "#{property.to_s} in #{parsed[parsed[:street] ? :unmatched : :remainder]}"
 			# 	puts list
 			# end
 			if parsed[:county] && 
@@ -109,19 +123,18 @@ module AddressParser
 				parsed.delete(:county)
 			else
 				list.sort_by{|i| i.length}.reverse.each do |item|
-					m = Regexp.new("(.+#{property == :street ? '\s+' : ',\s*'})(#{item})(,\s*.+)?$", Regexp::IGNORECASE).match(parsed[:remainder])
+					m = Regexp.new("^(.+(\s+|,\s*))?(#{item})(,\s*.+)?$", Regexp::IGNORECASE).match(parsed[parsed[:street] ? :unmatched : :remainder])
 					if m
-						parsed[:remainder] = m[1]
-						parsed[:remainder].gsub!(/(,\s*|\s+)$/, '')
-						parsed[property] = m[2]
+						parsed[parsed[:street] ? :unmatched : :remainder] = m[1] ? m[1].gsub!(/(,\s*|\s+)$/, '') : ''
+						parsed[property] = m[3]
 						if property == :city && !parsed[:inferred][:lat]
 							city = @@cities[item]
 							parsed[:inferred][:lat] = city['Location']['latitude']
 							parsed[:inferred][:long] = city['Location']['longitude']
 							parsed[:inferred][:county] = { :full_name => city['FULL_COUNTY'] }
 						end
-						if m[3]
-							parsed[:unmatched] = m[3].gsub!(/^(,\s*|\s+)/, '')
+						if m[4]
+							parsed[:unmatched] = m[4].gsub!(/^(,\s*|\s+)/, '')
 							parsed[:warnings].push('WARN_UNKNOWN_AREA')
 						end
 						break
@@ -159,13 +172,12 @@ module AddressParser
 			populate_from_list(parsed, :locality, localities.keys)
 		end
 
-		def self.populate_estate(parsed)
-			m = /^(.+,\s+)?((([A-Z]?[0-9][-\.0-9a-zA-Z]*)\s+)?([^,]+\s(Business Park|Industrial Estate|Industrial Park)))$/.match(parsed[:remainder])
+		def self.populate_estate(parsed, property)
+			m = /^(.+,\s+)?((([A-Z]?[0-9][-\.0-9a-zA-Z]*)\s+)?([^,]+\s(Business Park|Industrial Estate|Industrial Park)))$/.match(parsed[property])
 			if m
-				parsed[:remainder] = m[1] || ''
+				parsed[property] = m[1] ? m[1].gsub!(/(,\s*|,?\s+)$/, '') : ''
 				parsed[:number] = m[4] if m[4]
 				parsed[:estate] = m[5]
-				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
 				parsed[:warnings].push('WARN_GUESSED_ESTATE')
 			end
 			return parsed
@@ -273,7 +285,7 @@ module AddressParser
 		end
 
 		def self.populate_flat(parsed)
-			m = /^(.+(\s|,))?((Flat|Unit) [^,]*)$/i.match(parsed[:remainder])
+			m = /^(.+(\s|,))??((Flat|Unit) [^,]*|[-0-9\.]+)$/i.match(parsed[:remainder])
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:flat] = m[3]
