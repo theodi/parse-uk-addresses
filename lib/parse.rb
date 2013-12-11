@@ -12,10 +12,15 @@ module AddressParser
 		@@features_db = CouchRest.database!(ENV['FEATURES_DB'])
 		@@roads_db = CouchRest.database!(ENV['ROADS_DB'])
 		@@ons_db = CouchRest.database!(ENV['ONS_DB'])
+
 		@@counties = @@features_db.view('counties/all', { :group => true })['rows'].map { |r| r['key'] }
 		@@cities = {}
 		@@features_db.view('cities/all', { :include_docs => true })['rows'].each do |r|
-			@@cities[r['key']] = r['doc']
+			r['key'].split(/\s*\/\s*/).each do |name|
+				@@cities[name] = r['doc']
+				@@cities['Hull'] = r['doc'] if name == 'Kingston upon Hull'
+				@@cities['Newcastle'] = r['doc'] if name == 'Newcastle upon Tyne'
+			end
 		end
 
 		def self.parse(address)
