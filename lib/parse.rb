@@ -135,7 +135,9 @@ module AddressParser
 						end
 						if m[4]
 							parsed[:unmatched] = m[4].gsub!(/^(,\s*|\s+)/, '')
-							parsed[:warnings].push('WARN_UNKNOWN_AREA')
+							unless parsed[:street]
+								parsed[:warnings].push('WARN_UNKNOWN_AREA')
+							end
 						end
 						break
 					end

@@ -29,6 +29,10 @@ Then(/with the error ([^ ]+)$/) do |code|
 	@address[:errors].should include code
 end
 
+Then(/with no ([^ ]+)$/) do |property|
+	@address[property.to_sym].length.should == 0
+end
+
 Then(/with the warning ([^ ]+)$/) do |code|
 	@address[:warnings].should include code
 end

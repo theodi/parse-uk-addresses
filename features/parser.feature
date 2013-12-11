@@ -235,3 +235,5 @@ Feature: UK address parsing
 		 And whose street is Green Lane
 		 And whose name is Frank Slater House
 		 And whose flat is 8
+		 And with no errors
+		 And with no warnings
