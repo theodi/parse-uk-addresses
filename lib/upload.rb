@@ -61,28 +61,28 @@ module Upload
 				"_id" => "_design/roads_by_location",
 				:views => {
 					:all => {
-						:map => "function(doc){emit([null,doc.Centre.latitude,doc.Centre.longitude],doc._id)}"
+						:map => "function(doc){emit([null,doc.Centre.latitude,doc.Centre.longitude],doc._id);emit([null,doc.Min.latitude,doc.Min.longitude],doc._id);emit([null,doc.Max.latitude,doc.Max.longitude],doc._id);}"
 					}
 				}
 			}, {
 				"_id" => "_design/roads_by_location_in_locality",
 				:views => {
 					:all => {
-						:map => "function(doc){emit([doc.Locality,doc.Centre.latitude,doc.Centre.longitude],doc._id)}"
+						:map => "function(doc){emit([doc.Locality,doc.Centre.latitude,doc.Centre.longitude],doc._id);emit([doc.Locality,doc.Min.latitude,doc.Min.longitude],doc._id);emit([doc.Locality,doc.Max.latitude,doc.Max.longitude],doc._id);}"
 					}
 				}
 			}, {
 				"_id" => "_design/roads_by_location_in_district",
 				:views => {
 					:all => {
-						:map => "function(doc){emit([doc.Local_Authority,doc.Centre.latitude,doc.Centre.longitude],doc._id)}"
+						:map => "function(doc){emit([doc.Local_Authority,doc.Centre.latitude,doc.Centre.longitude],doc._id);emit([doc.Local_Authority,doc.Min.latitude,doc.Min.longitude],doc._id);emit([doc.Local_Authority,doc.Max.latitude,doc.Max.longitude],doc._id);}"
 					}
 				}
 			}, {
 				"_id" => "_design/roads_by_location_in_county",
 				:views => {
 					:all => {
-						:map => "function(doc){emit([doc.Cou_Unit,doc.Centre.latitude,doc.Centre.longitude],doc._id)}"
+						:map => "function(doc){emit([doc.Cou_Unit,doc.Centre.latitude,doc.Centre.longitude],doc._id);emit([doc.Cou_Unit,doc.Min.latitude,doc.Min.longitude],doc._id);emit([doc.Cou_Unit,doc.Max.latitude,doc.Max.longitude],doc._id);}"
 					}
 				}
 			}, {

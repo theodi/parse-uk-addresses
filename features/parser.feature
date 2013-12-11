@@ -237,3 +237,12 @@ Feature: UK address parsing
 		 And whose flat is 8
 		 And with no errors
 		 And with no warnings
+
+	Scenario: Parsing an flat in a numbered house
+		When I parse the address Flat 1, 12, Coventry Road, Ilford, Essex IG1 4QR
+		Then I get an address whose postcode is IG1 4QR
+		 And whose county is Essex
+		 And whose town is Ilford
+		 And whose street is Coventry Road
+		 And whose number is 12
+		 And whose flat is Flat 1

@@ -8,6 +8,8 @@ module AddressParser
 
 	class Address
 
+		@@debug = false
+
 		@@codepoint_db = CouchRest.database!(ENV['CODEPOINT_DB'])
 		@@features_db = CouchRest.database!(ENV['FEATURES_DB'])
 		@@roads_db = CouchRest.database!(ENV['ROADS_DB'])
@@ -73,7 +75,7 @@ module AddressParser
 				end
 			end
 			parsed[:remainder] = ''
-			# puts parsed.to_yaml
+			puts parsed.to_yaml if @@debug
 			return parsed
 		end
 
@@ -187,10 +189,14 @@ module AddressParser
 
 		def self.populate_road(parsed)
 			location = [parsed[:inferred][:lat], parsed[:inferred][:long]]
-			latfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 4000 : 0.2
-			longfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 2000 : 0.4
+			latfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 2500 : 0.2
+			longfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 5000 : 0.4
 			startkey = ['', location[0] - latfuzz, location[1] - latfuzz]
 			endkey = ['', location[0] + longfuzz, location[1] + longfuzz]
+			if @@debug
+				puts startkey
+				puts endkey
+			end
 			if parsed[:inferred][:ward]
 				startkey[0] = parsed[:inferred][:ward][:name]
 				endkey[0] = parsed[:inferred][:ward][:name]
