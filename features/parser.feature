@@ -246,3 +246,12 @@ Feature: UK address parsing
 		 And whose street is Coventry Road
 		 And whose number is 12
 		 And whose flat is Flat 1
+
+	Scenario: Parsing an address with an unrecognised street
+		When I parse the address 576, New North Road, Hainault, Ilford, Essex IG6 3TG
+		Then I get an address whose postcode is IG6 3TG
+		 And whose county is Essex
+		 And whose town is Ilford
+		 And whose locality is Hainault
+		 And whose street is New North Road
+		 And whose number is 576
