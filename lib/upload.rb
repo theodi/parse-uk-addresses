@@ -49,6 +49,13 @@ module Upload
 					}
 				}
 			}, {
+				"_id" => "_design/localities_by_county",
+				:views => {
+					:all => {
+						:map => "function(doc){if(doc.F_CODE==='T'||doc.F_CODE==='O'){emit(doc.FULL_COUNTY,doc._id)}}"
+					}
+				}
+			}, {
 				"_id" => "_design/features_by_name",
 				:views => {
 					:all => {
