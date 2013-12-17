@@ -68,28 +68,7 @@ module Upload
 				"_id" => "_design/roads_by_location",
 				:views => {
 					:all => {
-						:map => "function(doc){emit([null,doc.Centre.latitude,doc.Centre.longitude],doc._id);emit([null,doc.Min.latitude,doc.Min.longitude],doc._id);emit([null,doc.Max.latitude,doc.Max.longitude],doc._id);}"
-					}
-				}
-			}, {
-				"_id" => "_design/roads_by_location_in_locality",
-				:views => {
-					:all => {
-						:map => "function(doc){emit([doc.Locality,doc.Centre.latitude,doc.Centre.longitude],doc._id);emit([doc.Locality,doc.Min.latitude,doc.Min.longitude],doc._id);emit([doc.Locality,doc.Max.latitude,doc.Max.longitude],doc._id);}"
-					}
-				}
-			}, {
-				"_id" => "_design/roads_by_location_in_district",
-				:views => {
-					:all => {
-						:map => "function(doc){emit([doc.Local_Authority,doc.Centre.latitude,doc.Centre.longitude],doc._id);emit([doc.Local_Authority,doc.Min.latitude,doc.Min.longitude],doc._id);emit([doc.Local_Authority,doc.Max.latitude,doc.Max.longitude],doc._id);}"
-					}
-				}
-			}, {
-				"_id" => "_design/roads_by_location_in_county",
-				:views => {
-					:all => {
-						:map => "function(doc){emit([doc.Cou_Unit,doc.Centre.latitude,doc.Centre.longitude],doc._id);emit([doc.Cou_Unit,doc.Min.latitude,doc.Min.longitude],doc._id);emit([doc.Cou_Unit,doc.Max.latitude,doc.Max.longitude],doc._id);}"
+						:map => roads_map(nil)
 					}
 				}
 			}, {
@@ -101,6 +80,19 @@ module Upload
 				}
 			}])
 
+		end
+
+		private
+
+		def self.roads_map(property)
+			function = 'function(doc){'
+			function += "  for (lat = Math.floor(doc.Min.latitude / #{ENV['PIN_LAT']}); lat <= Math.ceil(doc.Max.latitude / #{ENV['PIN_LAT']}); lat++) {"
+			function += "    for (long = Math.floor(doc.Min.longitude / #{ENV['PIN_LONG']}); long <= Math.ceil(doc.Max.longitude / #{ENV['PIN_LONG']}); long++) {"
+			function += "      emit([#{property ? 'doc.' + property : 'null'}, lat, long],null);"
+			function += '    }'
+			function += '  }'
+			function += '}'
+			return function
 		end
 
 	end

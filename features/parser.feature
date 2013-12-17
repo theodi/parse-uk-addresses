@@ -259,6 +259,7 @@ Feature: UK address parsing
 	Scenario: Parsing an address with a missing postcode and no city
 		When I parse the address Flat 2nd Floor, 96b, Cranbrook Road, Ilford, Essex IG1 4PN
 		Then I get an address whose postcode is IG1 4PN
+		 And with the error ERR_BAD_POSTCODE
 		 And whose county is Essex
 		 And with the error ERR_BAD_COUNTY
 		 And whose town is Ilford
@@ -266,3 +267,12 @@ Feature: UK address parsing
 		 And whose number is 96b
 		 And whose floor is 2nd Floor
 		 And whose flat is Flat
+
+	Scenario: Parsing an address with a missing street
+		When I parse the address 279, New North Road, Hainault, Ilford, Essex IG6 3DX
+		Then I get an address whose postcode is IG6 3DX
+		 And whose county is Essex
+		 And whose town is Ilford
+		 And whose locality is Hainault
+		 And whose street is New North Road
+		 And whose number is 279

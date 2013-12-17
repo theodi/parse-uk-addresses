@@ -26,7 +26,7 @@ module AddressParser
 		end
 
 		def self.parse(address)
-			address.gsub!(/’/,"'")
+			address.gsub!(/\u2019/,"'")
 			parsed = {
 				:address => address,
 				:remainder => address,
@@ -219,58 +219,40 @@ module AddressParser
 		end
 
 		def self.populate_road(parsed)
-			location = [parsed[:inferred][:lat], parsed[:inferred][:long]]
-			if parsed[:inferred][:pqi]
-				latfuzz = parsed[:inferred][:pqi].to_f / 2000
-				longfuzz = parsed[:inferred][:pqi].to_f / 4000
-			elsif parsed[:inferred][:latlong_source] == :city
-				latfuzz = 0.05
-				longfuzz = 0.1
-			elsif parsed[:inferred][:latlong_source] == :town
-				latfuzz = 0.02
-				longfuzz = 0.04
-			elsif parsed[:inferred][:latlong_source] == :locality
-				latfuzz = 0.01
-				longfuzz = 0.02
-			end
-			startkey = ['', location[0] - latfuzz, location[1] - latfuzz]
-			endkey = ['', location[0] + longfuzz, location[1] + longfuzz]
-			if @@debug
-				puts startkey
-				puts endkey
-			end
-			if parsed[:inferred][:ward]
-				startkey[0] = parsed[:inferred][:ward][:name]
-				endkey[0] = parsed[:inferred][:ward][:name]
-				roads = get_roads('roads_by_location_in_locality/all', startkey, endkey)
-				populate_from_list(parsed, :street, roads.keys)
-				unless parsed[:street]
-					district = parsed[:inferred][:district][:full_name]
-					district = district.gsub(' - ', ' / ')
-					startkey[0] = district
-					endkey[0] = district
-					roads = get_roads('roads_by_location_in_district/all', startkey, endkey)
-					populate_from_list(parsed, :street, roads.keys)
+			if parsed[:inferred][:latlong_source] == :postcode
+				minLat = (parsed[:inferred][:lat] / ENV['PIN_LAT'].to_f).floor
+				maxLat = (parsed[:inferred][:lat] / ENV['PIN_LAT'].to_f).ceil
+				minLong = (parsed[:inferred][:long] / ENV['PIN_LONG'].to_f).floor
+				maxLong = (parsed[:inferred][:long] / ENV['PIN_LONG'].to_f).ceil
+				keys = [
+					[nil,minLat,minLong],
+					[nil,minLat,maxLong],
+					[nil,maxLat,minLong],
+					[nil,maxLat,maxLong]
+				]
+				roads = {}
+				@@roads_db.view('roads_by_location/all', { :keys => keys, :include_docs => true })['rows'].each do |road|
+					roads[road['doc']['Name']] = road['doc'] if road['doc']['Name']
 				end
-			end
-			if !parsed[:street] && (parsed[:inferred][:county] || parsed[:county])
-				county = parsed[:inferred][:county] ? parsed[:inferred][:county][:full_name] : parsed[:county]
-				county = county.gsub(' - ', ' / ')
-				startkey[0] = county
-				endkey[0] = county
-				roads = get_roads('roads_by_location_in_county/all', startkey, endkey)
 				populate_from_list(parsed, :street, roads.keys)
-			end
-			unless parsed[:street]
-				startkey[0] = nil
-				endkey[0] = nil
-				roads = get_roads('roads_by_location/all', startkey, endkey)
-				populate_from_list(parsed, :street, roads.keys)
-			end
-			if parsed[:street]
-				road = roads[parsed[:street].upcase]
-				parsed[:inferred][:tile_10k] = road['Tile_10k']
-				parsed[:inferred][:tile_25k] = road['Tile_25k']
+			else
+				road = /([0-9]+[^ ]*)? ([^,]+)$/.match(parsed[:remainder])[2]
+				roads = @@roads_db.view('roads_by_name/all', {:key => road.upcase, :include_docs => true})['rows']
+				if roads.empty?
+					road = /([^ ]+) (.+)$/.match(road)[2]
+					roads = @@roads_db.view('roads_by_name/all', {:key => road.upcase, :include_docs => true})['rows']
+				end
+				roads.sort_by! { |row|
+					x = row['doc']['Centre']['latitude'] - parsed[:inferred][:lat]
+					y = row['doc']['Centre']['longitude'] = parsed[:inferred][:long]
+					x * x + y * y
+				}
+				unless roads.empty?
+					populate_from_list(parsed, :street, [roads[0]['doc']['Name']])
+					parsed[:inferred][:lat] = roads[0]['doc']['Centre']['latitude']
+					parsed[:inferred][:long] = roads[0]['doc']['Centre']['longitude']
+					parsed[:inferred][:latlong_source] = :street
+				end
 			end
 			return parsed
 		end
