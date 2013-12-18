@@ -68,7 +68,7 @@ module Upload
 				"_id" => "_design/roads_by_location",
 				:views => {
 					:all => {
-						:map => roads_map(nil)
+						:map => roads_map
 					}
 				}
 			}, {
@@ -84,11 +84,11 @@ module Upload
 
 		private
 
-		def self.roads_map(property)
+		def self.roads_map
 			function = 'function(doc){'
 			function += "  for (lat = Math.floor(doc.Min.latitude / #{ENV['PIN_LAT']}); lat <= Math.ceil(doc.Max.latitude / #{ENV['PIN_LAT']}); lat++) {"
 			function += "    for (long = Math.floor(doc.Min.longitude / #{ENV['PIN_LONG']}); long <= Math.ceil(doc.Max.longitude / #{ENV['PIN_LONG']}); long++) {"
-			function += "      emit([#{property ? 'doc.' + property : 'null'}, lat, long],null);"
+			function += "      emit([lat, long],null);"
 			function += '    }'
 			function += '  }'
 			function += '}'

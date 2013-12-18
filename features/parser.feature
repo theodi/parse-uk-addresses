@@ -276,3 +276,20 @@ Feature: UK address parsing
 		 And whose locality is Hainault
 		 And whose street is New North Road
 		 And whose number is 279
+
+  Scenario: Parsing an address where the locality name incorporates a town name
+    When I parse the address Flat 2, 13, Chelmsford Road, South Woodford, London E18 2PW
+    Then I get an address whose postcode is E18 2PW
+     And whose city is London
+     And whose locality is South Woodford
+     And whose street is Chelmsford Road
+     And whose number is 13
+     And whose flat is Flat 2
+
+  Scenario: Parsing an address where the locality name is the same as a street name
+    When I parse the address 1, Dale Court, Grove Hill, London E18 2JD
+    Then I get an address whose postcode is E18 2JD
+     And whose city is London
+     And whose street is Grove Hill
+     And whose dependent_street is Dale Court
+     And whose number is 1

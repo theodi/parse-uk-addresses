@@ -8,7 +8,7 @@ module AddressParser
 
 	class Address
 
-		@@debug = false
+		@@debug = true
 
 		@@codepoint_db = CouchRest.database!(ENV['CODEPOINT_DB'])
 		@@features_db = CouchRest.database!(ENV['FEATURES_DB'])
@@ -126,7 +126,7 @@ module AddressParser
 				parsed.delete(:county)
 			else
 				items = list.sort_by{|i| i.length}.reverse!.join('|')
-				m = Regexp.new("^(.+(\s+|,\s*))??(#{items})(,\s*.+)?$", Regexp::IGNORECASE).match(parsed[parsed[:street] ? :unmatched : :remainder])
+				m = Regexp.new("^(.+(\s+|,\s*))?#{property == :street ? '' : '?'}(#{items})(,\s*.+)?$", Regexp::IGNORECASE).match(parsed[parsed[:street] ? :unmatched : :remainder])
 				if m
 					parsed[parsed[:street] ? :unmatched : :remainder] = m[1] ? m[1].gsub!(/(,\s*|\s+)$/, '') : ''
 					parsed[property] = m[3]
@@ -140,7 +140,8 @@ module AddressParser
 						end
 					end
 					if m[4]
-						parsed[:unmatched] = m[4].gsub!(/^(,\s*|\s+)/, '')
+						parsed[:unmatched] = '' unless parsed[:unmatched]
+						parsed[:unmatched] += m[4].gsub!(/^(,\s*|\s+)/, '')
 						unless parsed[:street]
 							parsed[:warnings].push('WARN_UNKNOWN_AREA')
 						end
@@ -166,6 +167,16 @@ module AddressParser
 			end
 			populate_from_list(parsed, :town, towns.keys)
 			populate_from_list(parsed, :locality, localities.keys)
+			if parsed[:town] && !parsed[:locality] && parsed[:unmatched]
+				unmatched = parsed[:unmatched]
+				parsed[:unmatched] += " #{parsed[:town]}"
+				populate_from_list(parsed, :locality, localities.keys)
+				if parsed[:locality]
+					parsed.delete(:town)
+				else
+					parsed[:unmatched] = unmatched
+				end
+			end
 			unless parsed[:inferred][:lat]
 				if parsed[:locality]
 					locality = localities[parsed[:locality]]
@@ -225,10 +236,10 @@ module AddressParser
 				minLong = (parsed[:inferred][:long] / ENV['PIN_LONG'].to_f).floor
 				maxLong = (parsed[:inferred][:long] / ENV['PIN_LONG'].to_f).ceil
 				keys = [
-					[nil,minLat,minLong],
-					[nil,minLat,maxLong],
-					[nil,maxLat,minLong],
-					[nil,maxLat,maxLong]
+					[minLat,minLong],
+					[minLat,maxLong],
+					[maxLat,minLong],
+					[maxLat,maxLong]
 				]
 				roads = {}
 				@@roads_db.view('roads_by_location/all', { :keys => keys, :include_docs => true })['rows'].each do |road|
