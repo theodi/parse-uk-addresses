@@ -1,3 +1,11 @@
 .DS_Store
 
 couchdb.std*
+
+/data/codepo_gb/
+
+/data/gaz50k_gb/
+
+/data/gazlco_gb/
+
+/data/ons/
