@@ -74,7 +74,7 @@ module AddressParser
 					parsed[:errors].push('ERR_NO_AREA')
 				end
 			end
-			parsed[:remainder] = ''
+			parsed.delete(:remainder)
 			puts parsed.to_yaml if @@debug
 			return parsed
 		end
@@ -211,9 +211,9 @@ module AddressParser
 			if features
 				populate_areas(parsed, features)
 				unless parsed[:locality] || parsed[:town]
-					parsed[:errors].push('ERR_BAD_COUNTY')
 					features = @@features_db.view('features_by_name/all', {:keys => parsed[:remainder].split(/\s*,\s*/), :include_docs => true})['rows']
 					populate_areas(parsed, features)
+					parsed[:errors].push('ERR_BAD_COUNTY') if parsed[:locality] || parsed[:town]
 				end
 			end
 		end

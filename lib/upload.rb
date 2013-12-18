@@ -125,7 +125,7 @@ module Upload
 					if row['code']
 						doc = {
 							"_id" => pattern ? row['code'] : row['name'], 
-							:type => type.sub(/_/,' '),
+							:type => type.gsub(/_/,' '),
 							:full_name => pattern ? row['name'] : row['code'],
 							:name => pattern ? row['name'].sub(pattern, '') : row['code']
 						}

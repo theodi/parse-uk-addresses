@@ -21,3 +21,6 @@ end
 task :upload_codepoint => :dotenv do
 	Upload::CodePoint.load
 end
+
+task :upload => [:upload_designs, :upload_ons, :upload_features, :upload_roads, :upload_codepoint] do
+end
