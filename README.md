@@ -90,25 +90,25 @@ Warnings are:
 
 ### Rights and Licensing
 
-[CodePoint Open](http://www.ordnancesurvey.co.uk/business-and-government/products/code-point-open.html) data within `data/codepo_gb` is reproduced under the [OS Open Data Licence](http://www.ordnancesurvey.co.uk/docs/licences/os-opendata-licence.pdf): 
+[CodePoint Open](http://www.ordnancesurvey.co.uk/business-and-government/products/code-point-open.html) data within `data/codepo_gb.zip` is reproduced under the [OS Open Data Licence](http://www.ordnancesurvey.co.uk/docs/licences/os-opendata-licence.pdf): 
 
 > Contains Ordnance Survey data © Crown copyright and database right 2013<br>
 Contains Royal Mail data © Royal Mail copyright and database right 2013<br>
 Contains National Statistics data © Crown copyright and database right 2013
 
-[OS Locator](http://www.ordnancesurvey.co.uk/business-and-government/products/os-locator.html) data within `data/gazlco_gb` is reproduced under the [OS Open Data Licence](http://www.ordnancesurvey.co.uk/docs/licences/os-opendata-licence.pdf): 
+[OS Locator](http://www.ordnancesurvey.co.uk/business-and-government/products/os-locator.html) data within `data/gazlco_gb.zip` is reproduced under the [OS Open Data Licence](http://www.ordnancesurvey.co.uk/docs/licences/os-opendata-licence.pdf): 
 
 > Contains Ordnance Survey data © Crown copyright and database right 2013
 
-[1:50 000 Scale Gazetteer](http://www.ordnancesurvey.co.uk/business-and-government/products/50k-gazetteer.html) data within `data/gaz50k_gb` is reproduced under the [OS Open Data Licence](http://www.ordnancesurvey.co.uk/docs/licences/os-opendata-licence.pdf): 
+[1:50 000 Scale Gazetteer](http://www.ordnancesurvey.co.uk/business-and-government/products/50k-gazetteer.html) data within `data/gaz50k_gb.zip` is reproduced under the [OS Open Data Licence](http://www.ordnancesurvey.co.uk/docs/licences/os-opendata-licence.pdf): 
 
 > Contains Ordnance Survey data © Crown copyright and database right 2013
 
-Lookup data within `data/ons` is reproduced under the [Open Government Licence](http://www.nationalarchives.gov.uk/doc/open-government-licence):
+Lookup data within `data/ons.zip` is reproduced under the [Open Government Licence](http://www.nationalarchives.gov.uk/doc/open-government-licence):
 
 > Contains National Statistics data © Crown copyright and database right 2013
 
-[Property Addresses and Council Tax Valuation Bands](http://data.redbridge.gov.uk/View/property/property-addresses-and-council-tax-valuation-bands) from the [London Borough of Redbridge](http://www.redbridge.gov.uk/) within `data/redbridge` is reproduced under the [Datashare Licence](http://data.redbridge.gov.uk/About/Licence).
+[Property Addresses and Council Tax Valuation Bands](http://data.redbridge.gov.uk/View/property/property-addresses-and-council-tax-valuation-bands) from the [London Borough of Redbridge](http://www.redbridge.gov.uk/) within `data/redbridge.zip` is reproduced under the [Datashare Licence](http://data.redbridge.gov.uk/About/Licence).
 
 Everything else is available under the MIT Licence:
 
