@@ -293,3 +293,14 @@ Feature: UK address parsing
      And whose street is Grove Hill
      And whose dependent_street is Dale Court
      And whose number is 1
+
+  Scenario: Parsing an address where there's a flat number in a named property
+    When I parse the address 4 Hope House, 12, Village Way, Barkingside Ilford, Essex IG6 1RP
+    Then I get an address whose postcode is IG6 1RP
+     And whose county is Essex
+     And whose town is Ilford
+     And whose locality is Barkingside
+     And whose street is Village Way
+     And whose number is 12
+     And whose name is Hope House
+     And whose flat is 4

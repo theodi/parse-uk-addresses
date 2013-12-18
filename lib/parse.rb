@@ -8,7 +8,7 @@ module AddressParser
 
 	class Address
 
-		@@debug = true
+		@@debug = false
 
 		@@codepoint_db = CouchRest.database!(ENV['CODEPOINT_DB'])
 		@@features_db = CouchRest.database!(ENV['FEATURES_DB'])
@@ -309,9 +309,11 @@ module AddressParser
 					parsed[:name] = parsed[:remainder]
 					parsed[:remainder] = ''
 				else
+					n = /^([^ ]?[0-9][^ ]*) (.+ .+)$/.match(m[2])
 					parsed[:remainder] = m[1] || ''
-					parsed[:name] = m[2]
+					parsed[:remainder] += n[1] if n
 					parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+					parsed[:name] = n ? n[2] : m[2]
 				end
 			end
 			return parsed
