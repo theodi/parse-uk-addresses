@@ -136,10 +136,12 @@ module AddressParser
 		end
 
 		def self.populate_from_list(parsed, property, list)
+			# debugging stuff
 			unless !@@debug || [:city,:county].include?(property)
 				puts "#{property.to_s} in #{parsed[parsed[:street] ? :unmatched : :remainder]}"
 				puts list
 			end
+
 			if parsed[:county] && 
 				 [:city,:town].include?(property) && 
 				 list.map { |i| i.upcase }.include?(parsed[:county].upcase)
@@ -152,8 +154,26 @@ module AddressParser
 				# find all the matches
 				matches = []
 				list.each do |item|
-					m = Regexp.new("^(.+(\s+|,\s*))?#{property == :street ? '' : '?'}(#{item.gsub(/\(/, '\(').gsub(/\)/, '\)')})(,\s*.+)?$", Regexp::IGNORECASE).match(remainder)
+					m = Regexp.new("^(.+(\s+|,\s*))?#{property == :street ? '' : '?'}(#{item.gsub(/(\(|\))/, '\\\\\1')})(,\s*.+)?$", Regexp::IGNORECASE).match(remainder)
 					matches.push(m) if m
+				end
+
+				# couldn't find a matching street? what about one that's named something similar?
+				originals = {}
+				if matches.empty? && property == :street
+					list.each do |item|
+						words = item.gsub(/(\(|\))/, '\\\\\1').split(' ')
+						words.map!.with_index do |word,i| 
+							w = word.gsub(/(\p{Punct})/, '\1?')
+							i > 0 ? "(?:#{w})?" : w 
+						end
+						regexp = Regexp.new("^(.+(\s+|,\s*))??(#{words.join(' ?')}[^, ]*)(,\s*.+)$", Regexp::IGNORECASE)
+						m = regexp.match(remainder)
+						if m && m[3] != ''
+							matches.push(m)
+							originals[m[3]] = item
+						end
+					end
 				end
 
 				# select the one that starts earliest and is longest
@@ -162,6 +182,10 @@ module AddressParser
 				if m
 					parsed[parsed[:street] ? :unmatched : :remainder] = m[1] ? m[1].gsub!(/(,\s*|\s+)$/, '') : ''
 					parsed[property] = m[3]
+					if originals[m[3]]
+						parsed[:inferred][property] = originals[m[3]]
+						parsed[:errors].push("ERR_BAD_#{property.to_s.upcase}")
+					end
 					unless parsed[:inferred][:lat] && parsed[:inferred][:latlong_source] == :postcode
 						if property == :city
 							city = @@cities[parsed[:city]]
@@ -371,7 +395,7 @@ module AddressParser
 			end
 			populate_from_list(parsed, :street, roads.keys)
 			if parsed[:street]
-				road = roads[parsed[:street].upcase]
+				road = roads[parsed[:inferred][:street] || parsed[:street].upcase]
 				parsed[:inferred][:minLat] = road['Min']['latitude']
 				parsed[:inferred][:maxLat] = road['Max']['latitude']
 				parsed[:inferred][:minLong] = road['Min']['longitude']

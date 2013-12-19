@@ -71,11 +71,11 @@ Feature: UK address parsing
     When I parse the address Idas Court, 4-6 Princes Road, Hull, HU5 2RD
     Then I get an address whose postcode is HU5 2RD
      And whose city is Hull
-     And has no street
-     And has no number
-     And has no name
-     And with the error ERR_NO_STREET
-     And with the unmatched text Idas Court, 4-6 Princes Road
+     And whose street is Princes Road
+     And whose inferred street is PRINCE'S ROAD
+     And whose number is 4-6
+     And whose name is Idas Court
+     And with the error ERR_BAD_STREET
 
   Scenario: Parsing an address with a name and a number
     When I parse the address Idas Court, 4-6 Prince's Road, Kingston upon Hull, HU5 2RD
@@ -337,7 +337,7 @@ Feature: UK address parsing
      And whose number is 52
      And whose flat is Flat 2
 
-  Scenario: Parsing an address
+  Scenario: Parsing an address where the road is further than usual from the postcode
     When I parse the address Dick Turpin Pub, Aldborough Road North, Newbury Park, Ilford, Essex IG2 7TD
     Then I get an address whose postcode is IG2 7TD
      And whose county is Essex
@@ -345,3 +345,12 @@ Feature: UK address parsing
      And whose locality is Newbury Park
      And whose street is Aldborough Road North
      And whose name is Dick Turpin Pub
+
+  Scenario: Parsing an address where the street is wrong but guessable
+    When I parse the address 323, Snakes Lane, Woodford Green IG8 7JL
+    Then I get an address whose postcode is IG8 7JL
+     And whose locality is Woodford Green
+     And whose street is Snakes Lane
+     And whose number is 323
+     And with the error ERR_BAD_STREET
+     And whose inferred street is SNAKES LANE EAST
