@@ -90,6 +90,12 @@ module AddressParser
 			if parsed[:errors].include?('ERR_BAD_POSTCODE') && parsed[:inferred][:minLat]
 				infer_postcode(parsed)
 			end
+			if parsed[:county] && 
+				!parsed[:errors].include?('ERR_BAD_POSTCODE') &&
+				(!parsed[:inferred][:county] ||
+					parsed[:inferred][:county][:full_name] != parsed[:county])
+				parsed[:errors].push('ERR_BAD_COUNTY')
+			end
 			puts parsed.to_yaml if @@debug
 			return parsed
 		end
@@ -146,7 +152,7 @@ module AddressParser
 				if m
 					parsed[parsed[:street] ? :unmatched : :remainder] = m[1] ? m[1].gsub!(/(,\s*|\s+)$/, '') : ''
 					parsed[property] = m[3]
-					unless parsed[:inferred][:lat]
+					unless parsed[:inferred][:lat] && parsed[:inferred][:latlong_source] == :postcode
 						if property == :city
 							city = @@cities[parsed[:city]]
 							parsed[:inferred][:lat] = city['Location']['latitude']

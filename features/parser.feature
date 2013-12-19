@@ -22,6 +22,7 @@ Feature: UK address parsing
     When I parse the address 92, Liston Way, Woodford Green, Essex IG8 7BL
     Then I get an address whose postcode is IG8 7BL
      And whose county is Essex
+     And with the error ERR_BAD_COUNTY
      And has no city
      And whose locality is Woodford Green
      And whose street is Liston Way
@@ -235,7 +236,7 @@ Feature: UK address parsing
      And whose street is Green Lane
      And whose name is Frank Slater House
      And whose flat is 8
-     And with no errors
+     And with the error ERR_BAD_COUNTY
      And with no warnings
 
   Scenario: Parsing an flat in a numbered house
