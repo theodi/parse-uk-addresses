@@ -327,3 +327,12 @@ Feature: UK address parsing
      And whose floor is 1st Floor
      And whose first line is Mtte
      And whose inferred postcodes includes IG1 1XG
+
+  Scenario: Parsing an address where the locality is also a street
+    When I parse the address Flat 2, 52, Grove Hill, South Woodford, London E18 2JG
+    Then I get an address whose postcode is E18 2JG
+     And whose city is London
+     And whose locality is South Woodford
+     And whose street is Grove Hill
+     And whose number is 52
+     And whose flat is Flat 2

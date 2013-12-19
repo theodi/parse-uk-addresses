@@ -146,9 +146,19 @@ module AddressParser
 				# what's been identified as a county is actually a city
 				parsed[property] = parsed[:county]
 				parsed.delete(:county)
-			else
-				items = list.sort_by{|i| i.length}.reverse!.map {|i| i.gsub(/\(/, '\(').gsub(/\)/, '\)')}.join('|')
-				m = Regexp.new("^(.+(\s+|,\s*))?#{property == :street ? '' : '?'}(#{items})(,\s*.+)?$", Regexp::IGNORECASE).match(parsed[parsed[:street] ? :unmatched : :remainder])
+			elsif !list.empty?
+				remainder = parsed[parsed[:street] ? :unmatched : :remainder]
+
+				# find all the matches
+				matches = []
+				list.each do |item|
+					m = Regexp.new("^(.+(\s+|,\s*))?#{property == :street ? '' : '?'}(#{item.gsub(/\(/, '\(').gsub(/\)/, '\)')})(,\s*.+)?$", Regexp::IGNORECASE).match(remainder)
+					matches.push(m) if m
+				end
+
+				# select the one that starts earliest and is longest
+				matches.sort_by! { |m| [m[1] ? m[1].length : 0, m[3].length] }
+				m = matches[0]
 				if m
 					parsed[parsed[:street] ? :unmatched : :remainder] = m[1] ? m[1].gsub!(/(,\s*|\s+)$/, '') : ''
 					parsed[property] = m[3]
