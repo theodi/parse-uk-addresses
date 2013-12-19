@@ -122,10 +122,11 @@ module AddressParser
 			if parsed[:county] && 
 				 [:city,:town].include?(property) && 
 				 list.map { |i| i.upcase }.include?(parsed[:county].upcase)
+				# what's been identified as a county is actually a city
 				parsed[property] = parsed[:county]
 				parsed.delete(:county)
 			else
-				items = list.sort_by{|i| i.length}.reverse!.join('|')
+				items = list.sort_by{|i| i.length}.reverse!.map {|i| i.gsub(/\(/, '\(').gsub(/\)/, '\)')}.join('|')
 				m = Regexp.new("^(.+(\s+|,\s*))?#{property == :street ? '' : '?'}(#{items})(,\s*.+)?$", Regexp::IGNORECASE).match(parsed[parsed[:street] ? :unmatched : :remainder])
 				if m
 					parsed[parsed[:street] ? :unmatched : :remainder] = m[1] ? m[1].gsub!(/(,\s*|\s+)$/, '') : ''
@@ -213,7 +214,7 @@ module AddressParser
 				unless parsed[:locality] || parsed[:town]
 					features = @@features_db.view('features_by_name/all', {:keys => parsed[:remainder].split(/\s*,\s*/), :include_docs => true})['rows']
 					populate_areas(parsed, features)
-					parsed[:errors].push('ERR_BAD_COUNTY') if parsed[:locality] || parsed[:town]
+					parsed[:errors].push('ERR_BAD_COUNTY') if parsed[:county] && (parsed[:locality] || parsed[:town])
 				end
 			end
 		end
@@ -320,7 +321,7 @@ module AddressParser
 		end
 
 		def self.populate_floor(parsed)
-			m = /^(.+(\s|,))?([0-9]+[a-zA-Z]* Floor|Floor [0-9]+[a-zA-Z]*)$/i.match(parsed[:remainder])
+			m = /^(.+(\s|,))?([0-9]+[a-zA-Z]* Fl(oo)?r|Fl(oo)?r [0-9]+[a-zA-Z]*)$/i.match(parsed[:remainder])
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:floor] = m[3]

@@ -293,6 +293,7 @@ Feature: UK address parsing
      And whose street is Grove Hill
      And whose dependent_street is Dale Court
      And whose number is 1
+     And with no errors
 
   Scenario: Parsing an address where there's a flat number in a named property
     When I parse the address 4 Hope House, 12, Village Way, Barkingside Ilford, Essex IG6 1RP
@@ -304,3 +305,23 @@ Feature: UK address parsing
      And whose number is 12
      And whose name is Hope House
      And whose flat is 4
+
+  Scenario: Parsing an address where some localities have names with brackets in them and the word 'floor' has been abbreviated
+    When I parse the address Flat 1st Flr, 83a, High Road, South Woodford, London E18 2QP
+    Then I get an address whose postcode is E18 2QP
+     And whose city is London
+     And whose locality is South Woodford
+     And whose street is High Road
+     And whose number is 83a
+     And whose floor is 1st Flr
+     And whose flat is Flat
+
+  # Scenario: Parsing an address with a floor whose flat has a name rather than a number
+  #   When I parse the address Mtte 1st Floor, 59, Green Lane, Ilford, Essex IG1 1XF
+  #   Then I get an address whose postcode is IG1 1XF
+  #    And whose county is Essex
+  #    And whose town is Ilford
+  #    And whose street is Green Lane
+  #    And whose number is 59
+  #    And whose floor is 1st Floor
+  #    And whose flat is Mtte
