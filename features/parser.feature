@@ -336,3 +336,12 @@ Feature: UK address parsing
      And whose street is Grove Hill
      And whose number is 52
      And whose flat is Flat 2
+
+  Scenario: Parsing an address
+    When I parse the address Dick Turpin Pub, Aldborough Road North, Newbury Park, Ilford, Essex IG2 7TD
+    Then I get an address whose postcode is IG2 7TD
+     And whose county is Essex
+     And whose town is Ilford
+     And whose locality is Newbury Park
+     And whose street is Aldborough Road North
+     And whose name is Dick Turpin Pub

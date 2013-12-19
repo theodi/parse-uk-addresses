@@ -305,22 +305,26 @@ module AddressParser
 					[maxLat,minLong],
 					[maxLat,maxLong]
 				]
-				roads = {}
-				@@roads_db.view('roads_by_location/all', { :keys => keys, :include_docs => true })['rows'].each do |road|
-					roads[road['doc']['Name']] = road['doc'] if road['doc']['Name']
-				end
-				populate_from_list(parsed, :street, roads.keys)
-				if parsed[:street]
-					road = roads[parsed[:street].upcase]
-					parsed[:inferred][:minLat] = road['Min']['latitude']
-					parsed[:inferred][:maxLat] = road['Max']['latitude']
-					parsed[:inferred][:minLong] = road['Min']['longitude']
-					parsed[:inferred][:maxLong] = road['Max']['longitude']
+				parsed = get_roads(parsed, keys)
+				unless parsed[:street]
+					keys = [
+						[minLat-1,minLong],
+						[minLat-1,maxLong],
+						[minLat,minLong-1],
+						[minLat,maxLong+1],
+						[maxLat+1,minLong],
+						[maxLat+1,maxLong],
+						[maxLat,minLong-1],
+						[maxLat,maxLong+1]
+					]
+					parsed = get_roads(parsed, keys)
 				end
 			else
+				# look for something that looks like a street name preceded by a number
 				road = /([0-9]+[^ ]*)? ([^,]+)$/.match(parsed[:remainder])[2]
 				roads = @@roads_db.view('roads_by_name/all', {:key => road.upcase, :include_docs => true})['rows']
 				if roads.empty?
+					# ok, so maybe we've got a building name followed by a street
 					m = /([^ ]+) (.+)$/.match(road)
 					if m
 						road = m[2]
@@ -360,17 +364,20 @@ module AddressParser
 			return parsed
 		end
 
-		def self.get_roads(view, startkey, endkey)
-			inlat = @@roads_db.view(view, {:startkey => startkey, :endkey => endkey})
-			inlatlong = []
-			inlat['rows'].each do |f|
-				inlatlong.push(f['id']) if f['key'][2] >= startkey[2] && f['key'][2] < endkey[2]
-			end
+		def self.get_roads(parsed, keys)
 			roads = {}
-			@@roads_db.get_bulk(inlatlong)['rows'].each do |road|
+			@@roads_db.view('roads_by_location/all', { :keys => keys, :include_docs => true })['rows'].each do |road|
 				roads[road['doc']['Name']] = road['doc'] if road['doc']['Name']
 			end
-			return roads
+			populate_from_list(parsed, :street, roads.keys)
+			if parsed[:street]
+				road = roads[parsed[:street].upcase]
+				parsed[:inferred][:minLat] = road['Min']['latitude']
+				parsed[:inferred][:maxLat] = road['Max']['latitude']
+				parsed[:inferred][:minLong] = road['Min']['longitude']
+				parsed[:inferred][:maxLong] = road['Max']['longitude']
+			end
+			return parsed
 		end
 
 		def self.populate_dependent_street(parsed)
