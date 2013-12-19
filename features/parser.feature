@@ -325,3 +325,4 @@ Feature: UK address parsing
      And whose number is 59
      And whose floor is 1st Floor
      And whose first line is Mtte
+     And whose inferred postcodes includes IG1 1XG

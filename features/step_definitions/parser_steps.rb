@@ -5,7 +5,7 @@ When(/^I parse the address (.+)$/) do |address|
 	@address = AddressParser::Address.parse(address)
 end
 
-Then(/whose (inferred )?([^ ]+)( ([^ ]+))? is (the (float))?(.+)$/) do |inferred, property, m3, subproperty, m5, type, value|
+Then(/whose (inferred )?([^ ]+)( ([^ ]+))? (is|includes) (the (float))?(.+)$/) do |inferred, property, m3, subproperty, comparison, m5, type, value|
 	test = @address
 	test = test[:inferred] if inferred
 	if subproperty == 'line' && ['first', 'second', 'third'].include?(property)
@@ -18,7 +18,11 @@ Then(/whose (inferred )?([^ ]+)( ([^ ]+))? is (the (float))?(.+)$/) do |inferred
 		test = test[subproperty.to_sym] if subproperty
 	end
 	value = value.to_f if type == 'float'
-	test.should == value
+	if comparison == 'includes'
+		test.should include value
+	else
+		test.should == value
+	end
 end
 
 Then(/has no ([^ ]+)$/) do |property|

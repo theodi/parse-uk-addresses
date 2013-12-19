@@ -15,7 +15,19 @@ module AddressParser
 		@@roads_db = CouchRest.database!(ENV['ROADS_DB'])
 		@@ons_db = CouchRest.database!(ENV['ONS_DB'])
 
-		@@counties = @@features_db.view('counties/all', { :group => true })['rows'].map { |r| r['key'] }
+		@@counties = {}
+		@@features_db.view('counties_latitude/all', { :group => true })['rows'].each do |r|
+			@@counties[r['key']] = {}
+			@@counties[r['key']][:minLat] = r['value']['min']
+			@@counties[r['key']][:maxLat] = r['value']['max']
+			@@counties[r['key']][:lat] = r['value']['min'] + (r['value']['max'] - r['value']['min']) / 2
+		end
+		@@features_db.view('counties_longitude/all', { :group => true })['rows'].each do |r|
+			@@counties[r['key']][:minLong] = r['value']['min']
+			@@counties[r['key']][:maxLong] = r['value']['max']
+			@@counties[r['key']][:long] = r['value']['min'] + (r['value']['max'] - r['value']['min']) / 2
+		end
+
 		@@cities = {}
 		@@features_db.view('cities/all', { :include_docs => true })['rows'].each do |r|
 			r['key'].split(/\s*\/\s*/).each do |name|
@@ -44,12 +56,12 @@ module AddressParser
 					else
 						parsed[:errors].push('ERR_NO_STREET')
 					end
-					populate_from_list(parsed, :county, @@counties)
+					populate_from_list(parsed, :county, @@counties.keys)
 					populate_from_list(parsed, :city, @@cities.keys)
 					populate_from_area(parsed)
 					populate_estate(parsed, :unmatched)
 				else
-					populate_from_list(parsed, :county, @@counties)
+					populate_from_list(parsed, :county, @@counties.keys)
 					populate_from_list(parsed, :city, @@cities.keys)
 					populate_from_area(parsed)
 					populate_estate(parsed, :unmatched)
@@ -75,6 +87,9 @@ module AddressParser
 				end
 			end
 			parsed.delete(:remainder)
+			if parsed[:errors].include?('ERR_BAD_POSTCODE') && parsed[:inferred][:minLat]
+				infer_postcode(parsed)
+			end
 			puts parsed.to_yaml if @@debug
 			return parsed
 		end
@@ -138,6 +153,15 @@ module AddressParser
 							parsed[:inferred][:long] = city['Location']['longitude']
 							parsed[:inferred][:latlong_source] = :city
 							parsed[:inferred][:county] = { :full_name => city['FULL_COUNTY'] }
+						elsif property == :county
+							county = @@counties[parsed[:county]]
+							parsed[:inferred][:lat] = county[:lat]
+							parsed[:inferred][:long] = county[:long]
+							parsed[:inferred][:minLat] = county[:minLat]
+							parsed[:inferred][:maxLat] = county[:maxLat]
+							parsed[:inferred][:minLong] = county[:minLong]
+							parsed[:inferred][:maxLong] = county[:maxLong]
+							parsed[:inferred][:latlong_source] = :county
 						end
 					end
 					if m[4]
@@ -153,21 +177,41 @@ module AddressParser
 		end
 
 		def self.populate_areas(parsed, features)
+			if parsed[:inferred][:lat]
+				features.sort_by! { |feature|
+					x = feature['doc']['Location']['latitude'].to_f - parsed[:inferred][:lat].to_f
+					y = feature['doc']['Location']['longitude'].to_f - parsed[:inferred][:long].to_f
+					x * x + y * y
+				}.reverse!
+			end
+
 			towns = {}
 			localities = {}
 			features.each do |feature|
 				if feature['doc']['F_CODE'] == 'T'
 					feature['doc']['DEF_NAM'].split('/').each do |t|
-						towns[t] = feature['doc']
+						towns[t.upcase] = feature['doc']
 					end
 				elsif feature['doc']['F_CODE'] == 'O'
 					feature['doc']['DEF_NAM'].split('/').each do |t|
-						localities[t] = feature['doc']
+						localities[t.upcase] = feature['doc']
 					end
 				end
 			end
+
 			populate_from_list(parsed, :town, towns.keys)
+
+			# if we've found a town, remove localities that aren't in the same county as the town
+			# otherwise you get localities from completely different parts of the country
+			if parsed[:town]
+				town = towns[parsed[:town].upcase]
+				localities.delete_if do |name,locality|
+					locality['FULL_COUNTY'] != town['FULL_COUNTY']
+				end
+			end
 			populate_from_list(parsed, :locality, localities.keys)
+
+			# fixing it when the locality is a locality within a town
 			if parsed[:town] && !parsed[:locality] && parsed[:unmatched]
 				unmatched = parsed[:unmatched]
 				parsed[:unmatched] += " #{parsed[:town]}"
@@ -178,23 +222,26 @@ module AddressParser
 					parsed[:unmatched] = unmatched
 				end
 			end
-			unless parsed[:inferred][:lat]
+
+			unless parsed[:inferred][:lat] && [:postcode,:street].include?(parsed[:inferred][:latlong_source])
 				if parsed[:locality]
-					locality = localities[parsed[:locality]]
+					locality = localities[parsed[:locality].upcase]
 					parsed[:inferred][:lat] = locality['Location']['latitude']
 					parsed[:inferred][:long] = locality['Location']['longitude']
 					parsed[:inferred][:latlong_source] = :locality
+					parsed[:inferred][:county] = { :full_name => locality['FULL_COUNTY'] }
 				elsif parsed[:town]
-					town = towns[parsed[:town]]
+					town = towns[parsed[:town].upcase]
 					parsed[:inferred][:lat] = town['Location']['latitude']
 					parsed[:inferred][:long] = town['Location']['longitude']
 					parsed[:inferred][:latlong_source] = :town
-				end						
+					parsed[:inferred][:county] = { :full_name => town['FULL_COUNTY'] }
+				end
 			end
 		end
 
 		def self.populate_from_area(parsed)
-			if parsed[:inferred][:lat]
+			if parsed[:inferred][:lat] && parsed[:inferred][:latlong_source] != :county
 				location = [parsed[:inferred][:lat], parsed[:inferred][:long]]
 				latfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 60 : 0.2
 				longfuzz = parsed[:inferred][:pqi] ? parsed[:inferred][:pqi].to_f / 60 : 0.4
@@ -247,6 +294,13 @@ module AddressParser
 					roads[road['doc']['Name']] = road['doc'] if road['doc']['Name']
 				end
 				populate_from_list(parsed, :street, roads.keys)
+				if parsed[:street]
+					road = roads[parsed[:street].upcase]
+					parsed[:inferred][:minLat] = road['Min']['latitude']
+					parsed[:inferred][:maxLat] = road['Max']['latitude']
+					parsed[:inferred][:minLong] = road['Min']['longitude']
+					parsed[:inferred][:maxLong] = road['Max']['longitude']
+				end
 			else
 				road = /([0-9]+[^ ]*)? ([^,]+)$/.match(parsed[:remainder])[2]
 				roads = @@roads_db.view('roads_by_name/all', {:key => road.upcase, :include_docs => true})['rows']
@@ -271,14 +325,19 @@ module AddressParser
 					end
 				end
 				roads.sort_by! { |row|
-					x = row['doc']['Centre']['latitude'] - parsed[:inferred][:lat]
-					y = row['doc']['Centre']['longitude'] = parsed[:inferred][:long]
+					x = row['doc']['Centre']['latitude'].to_f - parsed[:inferred][:lat].to_f
+					y = row['doc']['Centre']['longitude'].to_f - parsed[:inferred][:long].to_f
 					x * x + y * y
 				}
 				unless roads.empty?
-					populate_from_list(parsed, :street, [roads[0]['doc']['Name']])
-					parsed[:inferred][:lat] = roads[0]['doc']['Centre']['latitude']
-					parsed[:inferred][:long] = roads[0]['doc']['Centre']['longitude']
+					road = roads[0]['doc']
+					populate_from_list(parsed, :street, [road['Name']])
+					parsed[:inferred][:lat] = road['Centre']['latitude']
+					parsed[:inferred][:long] = road['Centre']['longitude']
+					parsed[:inferred][:minLat] = road['Min']['latitude']
+					parsed[:inferred][:maxLat] = road['Max']['latitude']
+					parsed[:inferred][:minLong] = road['Min']['longitude']
+					parsed[:inferred][:maxLong] = road['Max']['longitude']
 					parsed[:inferred][:latlong_source] = :street
 				end
 			end
@@ -368,6 +427,29 @@ module AddressParser
 				parsed[:remainder].split(',').each do |l|
 					parsed[:lines].push(l.gsub(/(^\s+)|(\s+$)/, ''))
 				end
+			end
+			return parsed
+		end
+
+		def self.infer_postcode(parsed)
+			minLat = (parsed[:inferred][:minLat].to_f / ENV['PIN_LAT'].to_f).floor
+			maxLat = (parsed[:inferred][:maxLat].to_f / ENV['PIN_LAT'].to_f).ceil
+			minLong = (parsed[:inferred][:minLong].to_f / ENV['PIN_LONG'].to_f).floor
+			maxLong = (parsed[:inferred][:maxLong].to_f / ENV['PIN_LONG'].to_f).ceil
+			keys = []
+			(minLat..maxLat).each do |lat|
+				(minLong..maxLong).each do |long|
+					keys.push([lat,long])
+				end
+			end
+			postcodes = @@codepoint_db.view('postcodes_by_location/all', { :keys => keys, :include_docs => true })['rows']
+			postcodes.sort_by! { |row|
+				x = row['doc']['Location']['latitude'].to_f - parsed[:inferred][:lat].to_f
+				y = row['doc']['Location']['longitude'].to_f - parsed[:inferred][:long].to_f
+				x * x + y * y
+			}
+			unless postcodes.empty?
+				parsed[:inferred][:postcodes] = postcodes.map { |postcode| postcode['doc']['Postcode'] }.uniq
 			end
 			return parsed
 		end

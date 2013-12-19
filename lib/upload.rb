@@ -27,11 +27,19 @@ module Upload
 			}])
 
 			features_db.bulk_save([{
-				"_id" => "_design/counties",
+				"_id" => "_design/counties_latitude",
 				:views => {
 					:all => {
-						:map => "function(doc){emit(doc.FULL_COUNTY,1)}",
-						:reduce => "_sum"
+						:map => "function(doc){emit(doc.FULL_COUNTY,doc.Location.latitude);}",
+						:reduce => "_stats"
+					}
+				}
+			}, {
+				"_id" => "_design/counties_longitude",
+				:views => {
+					:all => {
+						:map => "function(doc){emit(doc.FULL_COUNTY,doc.Location.longitude);}",
+						:reduce => "_stats"
 					}
 				}
 			}, {
@@ -80,17 +88,41 @@ module Upload
 				}
 			}])
 
+			codepoint_db.bulk_save([{
+				"_id" => "_design/postcodes_by_location",
+				:views => {
+					:all => {
+						:map => postcode_map
+					}
+				}
+			}])
+
 		end
 
 		private
 
 		def self.roads_map
 			function = 'function(doc){'
+			function += "  var lat, long;"
 			function += "  for (lat = Math.floor(doc.Min.latitude / #{ENV['PIN_LAT']}); lat <= Math.ceil(doc.Max.latitude / #{ENV['PIN_LAT']}); lat++) {"
 			function += "    for (long = Math.floor(doc.Min.longitude / #{ENV['PIN_LONG']}); long <= Math.ceil(doc.Max.longitude / #{ENV['PIN_LONG']}); long++) {"
 			function += "      emit([lat, long],null);"
 			function += '    }'
 			function += '  }'
+			function += '}'
+			return function
+		end
+
+		def self.postcode_map
+			function = 'function(doc){'
+			function += "  var minLat = Math.floor(doc.Location.latitude / #{ENV['PIN_LAT']});"
+			function += "  var maxLat = Math.ceil(doc.Location.latitude / #{ENV['PIN_LAT']});"
+			function += "  var minLong = Math.floor(doc.Location.longitude / #{ENV['PIN_LONG']});"
+			function += "  var maxLong = Math.ceil(doc.Location.longitude / #{ENV['PIN_LONG']});"
+			function += "  emit([minLat,minLong], null);"
+			function += "  emit([maxLat,minLong], null);"
+			function += "  emit([minLat,maxLong], null);"
+			function += "  emit([maxLat,maxLong], null);"
 			function += '}'
 			return function
 		end
