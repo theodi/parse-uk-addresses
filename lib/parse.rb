@@ -453,7 +453,7 @@ module AddressParser
 		end
 
 		def self.populate_flat(parsed)
-			m = /^(.+(\s|,))??((Flat|Unit)( [^,]+)?|[-0-9\.]+)$/i.match(parsed[:remainder])
+			m = /^(.+(\s|,))??(([^,]+ )?(Flat|Unit)( [^,]+)?|[-0-9\.]+)$/i.match(parsed[:remainder])
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')

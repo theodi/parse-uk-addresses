@@ -354,3 +354,12 @@ Feature: UK address parsing
      And whose number is 323
      And with the error ERR_BAD_STREET
      And whose inferred street is SNAKES LANE EAST
+
+  Scenario: Parsing an address where the flat is a named flat
+    When I parse the address Studio Flat, 216e, High Road, Woodford Green, Essex IG8 9HH
+    Then I get an address whose postcode is IG8 9HH
+     And whose county is Essex
+     And whose locality is Woodford Green
+     And whose street is High Road
+     And whose number is 216e
+     And whose flat is Studio Flat
