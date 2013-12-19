@@ -8,7 +8,8 @@ task :unzip_data do
 	['ons.zip', 'gaz50k_gb.zip', 'gazlco_gb.zip', 'codepo_gb.zip'].each do |zip|
 		Zip::File.open(File.expand_path(zip, DATA_DIR)) do |zipfile|
 			zipfile.each do |file|
-			    zipfile.extract(file, File.expand_path(file.name, DATA_DIR)) unless file.name =~ /^__MACOSX/
+				path = File.expand_path(file.name, DATA_DIR)
+			    zipfile.extract(file, path) unless file.name =~ /^__MACOSX/ || File.exists?(path)
 			end
 		end
 	end
