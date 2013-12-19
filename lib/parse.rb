@@ -251,8 +251,24 @@ module AddressParser
 				road = /([0-9]+[^ ]*)? ([^,]+)$/.match(parsed[:remainder])[2]
 				roads = @@roads_db.view('roads_by_name/all', {:key => road.upcase, :include_docs => true})['rows']
 				if roads.empty?
-					road = /([^ ]+) (.+)$/.match(road)[2]
-					roads = @@roads_db.view('roads_by_name/all', {:key => road.upcase, :include_docs => true})['rows']
+					m = /([^ ]+) (.+)$/.match(road)
+					if m
+						road = m[2]
+						roads = @@roads_db.view('roads_by_name/all', {:key => road.upcase, :include_docs => true})['rows']
+					elsif parsed[:locality]
+						# maybe what we've recognised as a locality is actually a street
+						m = /([0-9]+[^ ]*)? ([^,]+)$/.match("#{parsed[:remainder]}, #{parsed[:locality]}")
+						if m
+							road = m[2]
+							roads = @@roads_db.view('roads_by_name/all', {:key => road.upcase, :include_docs => true})['rows']
+							unless roads.empty?
+								parsed[:remainder] = "#{parsed[:remainder]}, #{parsed[:locality]}"
+								parsed.delete(:locality)
+							end
+						else
+							roads = []
+						end
+					end
 				end
 				roads.sort_by! { |row|
 					x = row['doc']['Centre']['latitude'] - parsed[:inferred][:lat]
@@ -324,8 +340,8 @@ module AddressParser
 			m = /^(.+(\s|,))?([0-9]+[a-zA-Z]* Fl(oo)?r|Fl(oo)?r [0-9]+[a-zA-Z]*)$/i.match(parsed[:remainder])
 			if m
 				parsed[:remainder] = m[1] || ''
-				parsed[:floor] = m[3]
 				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+				parsed[:floor] = m[3]
 			end
 			return parsed
 		end
@@ -334,8 +350,8 @@ module AddressParser
 			m = /^(.+(\s|,))??((Flat|Unit)( [^,]+)?|[-0-9\.]+)$/i.match(parsed[:remainder])
 			if m
 				parsed[:remainder] = m[1] || ''
-				parsed[:flat] = m[3]
 				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+				parsed[:flat] = m[3]
 			end
 			return parsed
 		end

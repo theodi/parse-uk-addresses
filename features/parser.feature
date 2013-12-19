@@ -316,12 +316,12 @@ Feature: UK address parsing
      And whose floor is 1st Flr
      And whose flat is Flat
 
-  # Scenario: Parsing an address with a floor whose flat has a name rather than a number
-  #   When I parse the address Mtte 1st Floor, 59, Green Lane, Ilford, Essex IG1 1XF
-  #   Then I get an address whose postcode is IG1 1XF
-  #    And whose county is Essex
-  #    And whose town is Ilford
-  #    And whose street is Green Lane
-  #    And whose number is 59
-  #    And whose floor is 1st Floor
-  #    And whose flat is Mtte
+  Scenario: Parsing an address with a street that is also a locality
+    When I parse the address Mtte 1st Floor, 59, Green Lane, Ilford, Essex IG1 1XF
+    Then I get an address whose postcode is IG1 1XF
+     And whose county is Essex
+     And whose town is Ilford
+     And whose street is Green Lane
+     And whose number is 59
+     And whose floor is 1st Floor
+     And whose first line is Mtte
