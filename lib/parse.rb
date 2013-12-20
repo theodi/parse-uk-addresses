@@ -108,7 +108,7 @@ module AddressParser
 				if m
 					parsed[:remainder] = m[1]
 					parsed[:postcode] = m[3]
-					parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+					parsed[:remainder].gsub!(/(\s*,\s*|,?\s+)$/, '')
 				end
 			end
 			if parsed[:postcode] =~ /^BF/
@@ -154,7 +154,7 @@ module AddressParser
 				# find all the matches
 				matches = []
 				list.each do |item|
-					m = Regexp.new("^(.+(\s+|,\s*))?#{property == :street ? '' : '?'}(#{item.gsub(/(\(|\))/, '\\\\\1')})(,\s*.+)?$", Regexp::IGNORECASE).match(remainder)
+					m = Regexp.new("^(.+(\s+|,\s*))?#{property == :street ? '' : '?'}(#{item.gsub(/(\(|\)|\\)/, '\\\\\1')})(,\s*.+)?$", Regexp::IGNORECASE).match(remainder)
 					matches.push(m) if m
 				end
 
@@ -162,10 +162,9 @@ module AddressParser
 				originals = {}
 				if matches.empty? && property == :street
 					list.each do |item|
-						words = item.gsub(/(\(|\))/, '\\\\\1').split(' ')
+						words = item.gsub(/(\p{Punct})/, '\1?').gsub(/(\(|\)|\\)/, '\\\\\1').split(' ')
 						words.map!.with_index do |word,i| 
-							w = word.gsub(/(\p{Punct})/, '\1?')
-							i > 0 ? "(?:#{w})?" : w 
+							i > 0 ? "(?:#{word})?" : word 
 						end
 						regexp = Regexp.new("^(.+(\s+|,\s*))??(#{words.join(' ?')}[^, ]*)(,\s*.+)$", Regexp::IGNORECASE)
 						m = regexp.match(remainder)
@@ -309,7 +308,7 @@ module AddressParser
 		def self.populate_estate(parsed, property)
 			m = /^(.+,\s+)?((([A-Z]?[0-9][-\.0-9a-zA-Z]*)\s+)?([^,]+\s(Business Park|Industrial Estate|Industrial Park)))$/.match(parsed[property])
 			if m
-				parsed[property] = m[1] ? m[1].gsub!(/(,\s*|,?\s+)$/, '') : ''
+				parsed[property] = m[1] ? m[1].gsub!(/(\s*,\s*|,?\s+)$/, '') : ''
 				parsed[:number] = m[4] if m[4]
 				parsed[:estate] = m[5]
 				parsed[:warnings].push('WARN_GUESSED_ESTATE')
@@ -409,7 +408,7 @@ module AddressParser
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:dependent_street] = m[2]
-				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+				parsed[:remainder].gsub!(/(\s*,\s*|,?\s+)$/, '')
 				parsed[:warnings].push('WARN_GUESSED_DEPENDENT_STREET')
 			end
 			return parsed
@@ -420,7 +419,7 @@ module AddressParser
 			if m
 				parsed[:remainder] = m[1] || ''
 				parsed[:number] = m[3]
-				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+				parsed[:remainder].gsub!(/(\s*,\s*|,?\s+)$/, '')
 			end
 			return parsed
 		end
@@ -435,7 +434,7 @@ module AddressParser
 					n = /^([^ ]?[0-9][^ ]*) (.+ .+)$/.match(m[2])
 					parsed[:remainder] = m[1] || ''
 					parsed[:remainder] += n[1] if n
-					parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+					parsed[:remainder].gsub!(/(\s*,\s*|,?\s+)$/, '')
 					parsed[:name] = n ? n[2] : m[2]
 				end
 			end
@@ -446,7 +445,7 @@ module AddressParser
 			m = /^(.+(\s|,))?([0-9]+[a-zA-Z]* Fl(oo)?r|Fl(oo)?r [0-9]+[a-zA-Z]*)$/i.match(parsed[:remainder])
 			if m
 				parsed[:remainder] = m[1] || ''
-				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+				parsed[:remainder].gsub!(/(\s*,\s*|,?\s+)$/, '')
 				parsed[:floor] = m[3]
 			end
 			return parsed
@@ -456,7 +455,7 @@ module AddressParser
 			m = /^(.+(\s|,))??(([^,]+ )?(Flat|Unit)( [^,]+)?|[-0-9\.]+)$/i.match(parsed[:remainder])
 			if m
 				parsed[:remainder] = m[1] || ''
-				parsed[:remainder].gsub!(/(,\s*|,?\s+)$/, '')
+				parsed[:remainder].gsub!(/(\s*,\s*|,?\s+)$/, '')
 				parsed[:flat] = m[3]
 			end
 			return parsed

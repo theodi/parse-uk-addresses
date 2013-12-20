@@ -363,3 +363,12 @@ Feature: UK address parsing
      And whose street is High Road
      And whose number is 216e
      And whose flat is Studio Flat
+
+  Scenario: Parsing an address where there are brackets in street names and spaces before commas
+    When I parse the address Flat 1 At , 58, Fullers Road, South Woodford, London E18 2QA
+    Then I get an address whose postcode is E18 2QA
+     And whose city is London
+     And whose locality is South Woodford
+     And whose street is Fullers Road
+     And whose number is 58
+     And whose flat is Flat 1 At
