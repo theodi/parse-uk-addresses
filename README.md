@@ -16,6 +16,10 @@ Countries (2012) to government office regions (2010) to counties (2012) to local
 
 These are duplicated in the repo, but you should check to see that there haven't been any more recent releases and replace them as necessary.
 
+### Requirements
+
+ * Ruby 2.0.0
+
 ### Installation & Setup
 
 1. Install [CouchDB](http://couchdb.apache.org/) and get it running (eg `couchdb -b`)

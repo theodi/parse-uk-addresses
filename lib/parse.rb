@@ -49,17 +49,18 @@ module AddressParser
 			populate_postcode(parsed)
 			unless parsed[:postcode] =~ /^BF/
 				if parsed[:inferred][:lat]
-					populate_road(parsed)
+					populate_road(parsed, exact: true)
+					populate_from_list(parsed, :county, @@counties.keys)
+					populate_from_list(parsed, :city, @@cities.keys)
+					populate_from_area(parsed)
+					populate_estate(parsed, :unmatched)
+					populate_road(parsed) unless parsed[:street]
 					if parsed[:street]
 						populate_dependent_street(parsed)
 						populate_number(parsed)
 					else
 						parsed[:errors].push('ERR_NO_STREET')
 					end
-					populate_from_list(parsed, :county, @@counties.keys)
-					populate_from_list(parsed, :city, @@cities.keys)
-					populate_from_area(parsed)
-					populate_estate(parsed, :unmatched)
 				else
 					populate_from_list(parsed, :county, @@counties.keys)
 					populate_from_list(parsed, :city, @@cities.keys)
@@ -135,11 +136,11 @@ module AddressParser
 			return parsed
 		end
 
-		def self.populate_from_list(parsed, property, list)
+		def self.populate_from_list(parsed, property, list, exact: false)
 			# debugging stuff
 			unless !@@debug || [:city,:county].include?(property)
-				puts "#{property.to_s} in #{parsed[parsed[:street] ? :unmatched : :remainder]}"
-				puts list
+				puts "#{property.to_s} in #{parsed[parsed[:street] ? :unmatched : :remainder]}#{exact ? ' (exact)' : ''}"
+				puts list.inspect
 			end
 
 			if parsed[:county] && 
@@ -160,17 +161,18 @@ module AddressParser
 
 				# couldn't find a matching street? what about one that's named something similar?
 				originals = {}
-				if matches.empty? && property == :street
+				if matches.empty? && property == :street && !exact
 					list.each do |item|
 						words = item.gsub(/(\p{Punct})/, '\1?').gsub(/(\(|\)|\\)/, '\\\\\1').split(' ')
 						words.map!.with_index do |word,i| 
 							i > 0 ? "(?:#{word})?" : word 
 						end
-						regexp = Regexp.new("^(.+(\s+|,\s*))??(#{words.join(' ?')}[^, ]*)(,\s*.+)$", Regexp::IGNORECASE)
+						regexp = Regexp.new("^(.+(\s+|,\s*))??(#{words.join(' ?')}[^, ]*)(,\s*.+)?$", Regexp::IGNORECASE)
 						m = regexp.match(remainder)
 						if m && m[3] != ''
 							matches.push(m)
-							originals[m[3]] = item
+							originals[m[3]] = [] unless originals[m[3]]
+							originals[m[3]].push(item)
 						end
 					end
 				end
@@ -182,7 +184,10 @@ module AddressParser
 					parsed[parsed[:street] ? :unmatched : :remainder] = m[1] ? m[1].gsub!(/(,\s*|\s+)$/, '') : ''
 					parsed[property] = m[3]
 					if originals[m[3]]
-						parsed[:inferred][property] = originals[m[3]]
+						originals[m[3]].sort_by! { |s| 
+							lev(s.upcase, m[3].upcase)
+						}
+						parsed[:inferred][property] = originals[m[3]][0]
 						parsed[:errors].push("ERR_BAD_#{property.to_s.upcase}")
 					end
 					unless parsed[:inferred][:lat] && parsed[:inferred][:latlong_source] == :postcode
@@ -251,14 +256,14 @@ module AddressParser
 			populate_from_list(parsed, :locality, localities.keys)
 
 			# fixing it when the locality is a locality within a town
-			if parsed[:town] && !parsed[:locality] && parsed[:unmatched]
-				unmatched = parsed[:unmatched]
-				parsed[:unmatched] += " #{parsed[:town]}"
+			if parsed[:town] && !parsed[:locality] && parsed[parsed[:street] ? :unmatched : :remainder]
+				unmatched = parsed[parsed[:street] ? :unmatched : :remainder]
+				parsed[parsed[:street] ? :unmatched : :remainder] += " #{parsed[:town]}"
 				populate_from_list(parsed, :locality, localities.keys)
 				if parsed[:locality]
 					parsed.delete(:town)
 				else
-					parsed[:unmatched] = unmatched
+					parsed[parsed[:street] ? :unmatched : :remainder] = unmatched
 				end
 			end
 
@@ -316,7 +321,7 @@ module AddressParser
 			return parsed
 		end
 
-		def self.populate_road(parsed)
+		def self.populate_road(parsed, exact: false)
 			if parsed[:inferred][:latlong_source] == :postcode
 				minLat = (parsed[:inferred][:lat] / ENV['PIN_LAT'].to_f).floor
 				maxLat = (parsed[:inferred][:lat] / ENV['PIN_LAT'].to_f).ceil
@@ -328,7 +333,7 @@ module AddressParser
 					[maxLat,minLong],
 					[maxLat,maxLong]
 				]
-				parsed = get_roads(parsed, keys)
+				parsed = get_roads(parsed, keys, exact)
 				unless parsed[:street]
 					keys = [
 						[minLat-1,minLong],
@@ -340,41 +345,59 @@ module AddressParser
 						[maxLat,minLong-1],
 						[maxLat,maxLong+1]
 					]
-					parsed = get_roads(parsed, keys)
+					parsed = get_roads(parsed, keys, exact)
+					unless parsed[:street] || exact
+						parsed = guess_road(parsed)
+					end
 				end
 			else
-				# look for something that looks like a street name preceded by a number
-				road = /([0-9]+[^ ]*)? ([^,]+)$/.match(parsed[:remainder])[2]
+				parsed = guess_road(parsed)
+			end
+			return parsed
+		end
+
+		def self.guess_road(parsed)
+			roads = []
+			# look for something that looks like a street name preceded by a number
+			m = /([0-9]+[^ ]*)? ([^,]+)$/.match(parsed[:remainder])
+			if m
+				road = m[2]
 				roads = @@roads_db.view('roads_by_name/all', {:key => road.upcase, :include_docs => true})['rows']
-				if roads.empty?
-					# ok, so maybe we've got a building name followed by a street
-					m = /([^ ]+) (.+)$/.match(road)
+			end
+			if roads.empty?
+				# ok, so maybe we've got a building name followed by a street
+				m = /([^ ]+) (.+)$/.match(road)
+				if m
+					road = m[2]
+					roads = @@roads_db.view('roads_by_name/all', {:key => road.upcase, :include_docs => true})['rows']
+				elsif parsed[:locality]
+					# maybe what we've recognised as a locality is actually a street
+					m = /([0-9]+[^ ]*)? ([^,]+)$/.match("#{parsed[:remainder]}, #{parsed[:locality]}")
 					if m
 						road = m[2]
 						roads = @@roads_db.view('roads_by_name/all', {:key => road.upcase, :include_docs => true})['rows']
-					elsif parsed[:locality]
-						# maybe what we've recognised as a locality is actually a street
-						m = /([0-9]+[^ ]*)? ([^,]+)$/.match("#{parsed[:remainder]}, #{parsed[:locality]}")
-						if m
-							road = m[2]
-							roads = @@roads_db.view('roads_by_name/all', {:key => road.upcase, :include_docs => true})['rows']
-							unless roads.empty?
-								parsed[:remainder] = "#{parsed[:remainder]}, #{parsed[:locality]}"
-								parsed.delete(:locality)
-							end
-						else
-							roads = []
+						unless roads.empty?
+							parsed[:remainder] = "#{parsed[:remainder]}, #{parsed[:locality]}"
+							parsed.delete(:locality)
 						end
+					else
+						roads = []
 					end
 				end
-				roads.sort_by! { |row|
-					x = row['doc']['Centre']['latitude'].to_f - parsed[:inferred][:lat].to_f
-					y = row['doc']['Centre']['longitude'].to_f - parsed[:inferred][:long].to_f
-					x * x + y * y
-				}
-				unless roads.empty?
-					road = roads[0]['doc']
-					populate_from_list(parsed, :street, [road['Name']])
+			end
+			roads.sort_by! { |row|
+				x = row['doc']['Centre']['latitude'].to_f - parsed[:inferred][:lat].to_f
+				y = row['doc']['Centre']['longitude'].to_f - parsed[:inferred][:long].to_f
+				x * x + y * y
+			}
+			unless roads.empty?
+				road = roads[0]['doc']
+				populate_from_list(parsed, :street, [road['Name']])
+				if parsed[:inferred][:latlong_source] == :postcode
+					# we should have been able to pick up a street without guessing
+					# so if we get a street like this, it's a bad one
+					parsed[:errors].push('ERR_BAD_STREET')
+				else
 					parsed[:inferred][:lat] = road['Centre']['latitude']
 					parsed[:inferred][:long] = road['Centre']['longitude']
 					parsed[:inferred][:minLat] = road['Min']['latitude']
@@ -387,12 +410,12 @@ module AddressParser
 			return parsed
 		end
 
-		def self.get_roads(parsed, keys)
+		def self.get_roads(parsed, keys, exact)
 			roads = {}
 			@@roads_db.view('roads_by_location/all', { :keys => keys, :include_docs => true })['rows'].each do |road|
 				roads[road['doc']['Name']] = road['doc'] if road['doc']['Name']
 			end
-			populate_from_list(parsed, :street, roads.keys)
+			populate_from_list(parsed, :street, roads.keys, exact: exact)
 			if parsed[:street]
 				road = roads[parsed[:inferred][:street] || parsed[:street].upcase]
 				parsed[:inferred][:minLat] = road['Min']['latitude']
@@ -507,6 +530,30 @@ module AddressParser
 			end
 			return hash
 		end
+
+		def self.lev(s, t)
+		  m = s.length
+		  n = t.length
+		  return m if n == 0
+		  return n if m == 0
+		  d = Array.new(m+1) {Array.new(n+1)}
+
+		  (0..m).each {|i| d[i][0] = i}
+		  (0..n).each {|j| d[0][j] = j}
+		  (1..n).each do |j|
+		    (1..m).each do |i|
+		      d[i][j] = if s[i-1] == t[j-1]  # adjust index into string
+		                  d[i-1][j-1]       # no operation required
+		                else
+		                  [ d[i-1][j]+1,    # deletion
+		                    d[i][j-1]+1,    # insertion
+		                    d[i-1][j-1]+1,  # substitution
+		                  ].min
+		                end
+		    end
+		  end
+		  d[m][n]
+ 		end
 
 	end
 

@@ -370,5 +370,18 @@ Feature: UK address parsing
      And whose city is London
      And whose locality is South Woodford
      And whose street is Fullers Road
+     And whose inferred street is FULLER'S ROAD
      And whose number is 58
      And whose flat is Flat 1 At
+
+  Scenario: Parsing an address whose street doesn't exist at that location (but does somewhere)
+    When I parse the address Flat 2nd Floor, 50b, Telegraph Mews, Goodmayes, Ilford, Essex IG3 8TF
+    Then I get an address whose postcode is IG3 8TF
+     And whose county is Essex
+     And whose town is Ilford
+     And whose locality is Goodmayes
+     And whose street is Telegraph Mews
+     And whose number is 50b
+     And whose floor is 2nd Floor
+     And with the error ERR_BAD_STREET
+     And has no inferred street

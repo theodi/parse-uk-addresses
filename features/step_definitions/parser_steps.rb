@@ -25,8 +25,11 @@ Then(/whose (inferred )?([^ ]+)( ([^ ]+))? (is|includes) (the (float))?(.+)$/) d
 	end
 end
 
-Then(/has no ([^ ]+)$/) do |property|
-	@address[property.to_sym].should == nil
+Then(/has no (inferred )?([^ ]+)$/) do |inferred, property|
+	test = @address
+	test = test[:inferred] if inferred
+	test = test[property.to_sym]
+	test.should == nil
 end
 
 Then(/with the error ([^ ]+)$/) do |code|
